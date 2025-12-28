@@ -82,8 +82,9 @@ sudo apt install libgd-dev libsqlite3-dev
 make linux
 
 # Run tests
-LD_LIBRARY_PATH=. ./siod -v01,-m2 test-gd.scm
-LD_LIBRARY_PATH=. ./siod -v01,-m2 test-sqlite3.scm
+LD_LIBRARY_PATH=. ./siod -v01,-m2 tests/test-gd.scm
+LD_LIBRARY_PATH=. ./siod -v01,-m2 tests/test-sqlite3.scm
+LD_LIBRARY_PATH=. ./siod -v01,-m2 tests/test-sql-utilities.scm
 ```
 
 ## Documentation

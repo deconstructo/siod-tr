@@ -4,6 +4,11 @@
 ;;
 ;; selfdoc.scm /usr/local/lib/siod/*.so > selfdoc.txt
 
+(require-so (so-ext "sql_sqlite3"))
+(require-so (so-ext "gd"))
+(require-so (so-ext "tar"))
+(require-so (so-ext "ss"))
+
 (define ++++builtin-type-explain-table
   '((tc_subr_0 "built-in subroutine of 0 arguments.")
     (tc_subr_1 "built-in subroutine of 1 argument.")

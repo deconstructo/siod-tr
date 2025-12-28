@@ -37,6 +37,7 @@ GCCW=-Wall -Wstrict-prototypes
 #
 SAMPLE_OBJS = sample.o slib.o sliba.o trace.o
 SIOD_OBJS_COMMON = slib.o sliba.o trace.o slibu.o md5.o
+SQL_SYBASE_OBJS = sql_sybase.o sql_sybasec.o
 HS_REGEX_OBJS=regcomp.o regerror.o regexec.o regfree.o
 #
 #
@@ -71,7 +72,7 @@ SLD=-DSIOD_LIB_DEFAULT=\\\"$(LIBSIODDIR)\\\"
 osf1:
 	$(MAKE) $(LDLP) \
 	PROGS="siod sample\
-              tar.so parser_pratt.so ss.so regex.so\
+              ndbm.so tar.so parser_pratt.so ss.so regex.so\
               acct.so statfs.so" \
 	CFLAGS="$(CDEBUG) -readonly_strings -O2 $(SLD)" \
 	LD_EXE_FLAGS="-call_shared" \
@@ -87,13 +88,13 @@ osf1:
 
 hpux:
 	$(MAKE) $(LDLP) \
-	PROGS="siod  tar.sl parser_pratt.sl ss.sl \
+	PROGS="siod ndbm.sl tar.sl parser_pratt.sl ss.sl \
 	       regex.sl" \
 	CFLAGS="-Ae -O +z -Dhpux -Dunix" \
 	LD_EXE_FLAGS="" \
 	LD_EXE_LIBS="-lm -ldld" \
 	LD_LIB_FLAGS="-b" \
-	LD_LIB_LIBS="-lm -ldld " \
+	LD_LIB_LIBS="-lm -ldld -lndbm" \
 	SO="sl" \
         build_driver
 
@@ -101,7 +102,7 @@ hpux:
 
 hpuxgcc:
 	$(MAKE) $(LDLP) \
-	PROGS="siod  tar.sl parser_pratt.sl ss.sl \
+	PROGS="siod ndbm.sl tar.sl parser_pratt.sl ss.sl \
 	       regex.sl regex.sl" \
         HS_REGEX_OBJS_NEEDED="$(HS_REGEX_OBJS)" \
         CC=gcc \
@@ -110,7 +111,7 @@ hpuxgcc:
 	LD_EXE_FLAGS="" \
 	LD_EXE_LIBS="-lm -ldld" \
 	LD_LIB_FLAGS="-b" \
-	LD_LIB_LIBS="-lm -ldld " \
+	LD_LIB_LIBS="-lm -ldld -lndbm" \
 	SO="sl" \
         build_driver
 
@@ -128,7 +129,7 @@ hpuxgcc:
 
 solaris:
 	$(MAKE) $(LDLP) \
-	PROGS="siod  tar.so parser_pratt.so ss.so regex.so" \
+	PROGS="siod ndbm.so tar.so parser_pratt.so ss.so regex.so" \
 	CC=gcc \
 	LD=ld \
 	CFLAGS="$(GCCW) $(CDEBUG) -DSUN5 -O2 $(SLD)" \
@@ -141,7 +142,7 @@ solaris:
 
 sybsolaris:
 	$(MAKE) $(LDLP) \
-	PROGS="siod  tar.so parser_pratt.so ss.so regex.so\
+	PROGS="siod ndbm.so tar.so parser_pratt.so ss.so regex.so\
                sql_sybase.so gd.so sample" \
 	CC=gcc \
 	LD=gcc \
@@ -182,16 +183,35 @@ sunos:
 linux:
 	$(MAKE) $(LDLP) \
 	PROGS="siod tar.so parser_pratt.so ss.so \
-	       regex.so acct.so sql_sqlite3.so gd.so" \
+	       regex.so acct.so sql_sqlite3.so pthreads.so" \
 	CC="gcc" \
 	LD="gcc" \
 	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 -D__USE_MISC -D__USE_GNU -D__USE_SVID -D__USE_XOPEN_EXTENDED -D__USE_XOPEN $(SLD)" \
 	LD_EXE_FLAGS="-rdynamic -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
 	LD_EXE_LIBS="-ldl" \
 	LD_LIB_FLAGS="-shared" \
-	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3" \
+	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread" \
 	SO="so" \
         build_driver
+
+# macOS / Darwin
+# Install dependencies with: brew install libgd sqlite3
+# uname = Darwin
+darwin:
+	$(MAKE) $(LDLP) \
+	PROGS="siod tar.dylib parser_pratt.dylib ss.dylib \
+	       regex.dylib acct.dylib sql_sqlite3.dylib pthreads.dylib" \
+	CC="clang" \
+	LD="clang" \
+	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 $(SLD)" \
+	LD_EXE_FLAGS="-Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
+	LD_EXE_LIBS="" \
+	LD_LIB_FLAGS="-dynamiclib" \
+	LD_LIB_LIBS="-lm -lsqlite3 -lpthread" \
+	SO="dylib" \
+        build_driver
+
+macos: darwin
 
 # adapt by Philippe Laliberte for MkLinux on ppc
 # I used -fsigned-char becaused their are unexplicited char
@@ -239,7 +259,7 @@ linux-ppc:
 sgi:
 	$(MAKE) $(LDLP) \
 	PROGS="siod \
-               tar.so parser_pratt.so ss.so regex.so"\
+              ndbm.so tar.so parser_pratt.so ss.so regex.so"\
         HS_REGEX_OBJS_NEEDED="$(HS_REGEX_OBJS)" \
 	CFLAGS="$(CDEBUG) -fullwarn -O2 -I. $(SLD)" \
 	LD_EXE_FLAGS="-call_shared -rpath $(LIBDIR):$(LIBSIODDIR)" \
@@ -294,13 +314,25 @@ ss.$(SO): ss.o libsiod.$(SO)
 acct.$(SO): acct.o libsiod.$(SO)
 
 
+# Note: libgd 2.3.3+ from https://libgd.github.io/
+gd.o: gd.c
+	$(CC) $(CFLAGS) `pkg-config --cflags gdlib` -c gd.c
+
 gd.$(SO): gd.o libsiod.$(SO)
 	$(LD) -o gd.$(SO) $(LD_LIB_FLAGS) gd.o libsiod.$(SO) \
 	      `pkg-config --libs gdlib` $(LD_LIB_LIBS)
 
+ndbm.$(SO): ndbm.o libsiod.$(SO)
+	$(LD) -o ndbm.$(SO) $(LD_LIB_FLAGS) ndbm.o libsiod.$(SO) \
+                            $(LD_LIB_LIBS)
+
 regex.$(SO): regex.o libsiod.$(SO) $(HS_REGEX_OBJS_NEEDED)
 	$(LD) -o regex.$(SO) $(LD_LIB_FLAGS) regex.o $(HS_REGEX_OBJS_NEEDED) \
                  libsiod.$(SO) $(LD_LIB_LIBS)
+
+pthreads.$(SO): pthreads.o libsiod.$(SO)
+	$(LD) -o pthreads.$(SO) $(LD_LIB_FLAGS) pthreads.o libsiod.$(SO) \
+	      -lpthread $(LD_LIB_LIBS)
 
 
 siod.o: siod.c siod.h
@@ -320,10 +352,8 @@ ss.o:	ss.c siod.h ss.h
 md5.o:	md5.c md5.h
 
 
-# Note: libgd 2.3.3+ from https://libgd.github.io/
-gd.o: gd.c
-	$(CC) $(CFLAGS) `pkg-config --cflags gdlib` -c gd.c
 
+ndbm.o: ndbm.c siod.h
 
 statfs.o: statfs.c siod.h
 
@@ -341,21 +371,20 @@ MANPAGES = siod snapshot-dir snapshot-compare http-get \
 
 LIBFILES = fork-test.scm http-server.scm http-stress.scm http.scm \
            maze-support.scm pratt.scm siod.scm smtp.scm  \
-           cgi-echo.scm find-files.scm \
+            cgi-echo.scm find-files.scm \
            hello.scm parser_pratt.scm pop3.scm selfdoc.scm \
 	   sample.c siod.html piechart.scm cgi.scm ftp.scm \
-           sql_sqlite3.scm sql_sqlite3-utilities.scm \
-	   gd-utilities.scm
+           sql_sqlite3.scm test-sqlite3.scm
 
-SOLIBFILES=gd tar ss regex acct  parser_pratt \
+SOLIBFILES=gd ndbm tar ss regex acct  parser_pratt \
            statfs sql_sqlite3
 
 PUBINCS = siod.h
 
-COMMON_SRCS=.gitignore README.md OLD_README.txt siod.c siod.h \
+COMMON_SRCS=README.txt OLD_README.txt siod.c siod.h \
             siodm.c siodp.h slib.c sliba.c slibu.c  \
             ss.c ss.h trace.c md5.c md5.h \
-            gd.c  tar.c regex.c acct.c statfs.c \
+            gd.c ndbm.c tar.c regex.c acct.c statfs.c \
             parser_pratt.c sql_sqlite3.c
 
 REGEX_SRCS=siod_regex.html cclass.h regcomp.c regex2.h regfree.c \
@@ -373,15 +402,8 @@ CMDSRCS = $(CMDFILES:=.smd)
 SRCFILES= $(COMMON_SRCS) $(UNIX_MK) $(VMS_MK) $(NT_MK) fixcrlf.smd \
           siod-dist.sh $(REGEX_SRCS)
 
-DOCFILES= docs/gd.md docs/sql_sqlite3.md docs/SQL-SQLITE3-SUMMARY.md \
-	  docs/GD-MODERNIZATION-SUMMARY.md
-
-TESTFILES= tests/test-gd.scm tests/test-sqlite3.scm \
-	   tests/test-sqlite3-utilities.scm 
-
-
 DISTFILES= $(CMDSRCS) $(LIBFILES) $(SRCFILES) $(MANPAGES:=.man) \
-           $(MANPAGES:=.txt) $(DOCFILES) $(TESTFILES)
+           $(MANPAGES:=.txt)
 
 INTO_BINDIR=$(CMDFILES) siod
 INTO_LIBDIR=libsiod.so libsiod.sl
@@ -419,7 +441,7 @@ install: $(DISTFILES)
 clean:
 	-rm -f *.o *.so *.sl *~ $(MANPAGES:.man=.txt) so_locations \
             siod sample siod.tar siod.tar.gz siod.zip selfdoc.txt TAGS \
-	    *.db *.gif  $(CMDFILES)
+	    *.db $(CMDFILES)
 
 # make manpage txt files for distribution to people who do not have 
 # nroff.

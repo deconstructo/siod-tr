@@ -64,6 +64,7 @@ gjc@world.std.com
    Release 3.4 win95 cleanup.
    Release 3.5 5-MAY-97 fixes, plus win95 "compiler" to create exe files.
    Release 3.6 5-APR-07. for Visual C++ Express Edition and CodePlex.com
+
   */
 
 #include <stdio.h>
@@ -90,7 +91,7 @@ static void init_slib_version(void)
 	NIL);}
 
 char * __stdcall siod_version(void)
-{return("3.6.2 12-MAY-07");}
+{return("RT-3.7.0 2025-12-28");}
 
 long nheaps = 2;
 LISP *heaps;
@@ -242,10 +243,11 @@ void __stdcall print_welcome(void)
  if (siod_verbose_level >= 2)
    {
      sprintf_s(msgbuff,sizeof(msgbuff),
-	       "Welcome to SIOD, Scheme In One Defun, Version %s\n",
+	       "Welcome to SIOD - The Reawakening!\n Scheme In One Defun, Version %s\n",
 	       siod_version());
      put_st(msgbuff);
      put_st("(C) Copyright 1988-2007 George J. Carrette\n");
+     put_st("Modifications (C) 2025- Scáth\n");
    }
 }
 
