@@ -66,7 +66,7 @@ gjc@world.std.com
    Release 3.6 5-APR-07. for Visual C++ Express Edition and CodePlex.com
 
 
-   Release TR-3.7.0 2025-12-30: include json support
+   Release TR-3.7.0 2025-12-30: include json & readline support
 
   */
 

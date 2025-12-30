@@ -226,23 +226,23 @@ MANPAGES = siod snapshot-dir snapshot-compare http-get \
            cp-build ftp-cp csiod ftp-put ftp-test ftp-get \
            http-stress proxy-server
 
-LIBFILES = fork-test.scm http-server.scm http-stress.scm http.scm \
+LIBFILES = http-server.scm http-stress.scm http.scm \
            maze-support.scm pratt.scm siod.scm smtp.scm  \
            cgi-echo.scm find-files.scm \
            hello.scm parser_pratt.scm pop3.scm selfdoc.scm \
 	   sample.c siod.html piechart.scm cgi.scm ftp.scm \
-           sql_sqlite3.scm test-sqlite3.scm
+           sql_sqlite3-utilities.scm gd-utilities.scm
 
-SOLIBFILES=gd ndbm tar ss regex acct  parser_pratt \
+SOLIBFILES=gd tar ss regex acct  parser_pratt \
            statfs sql_sqlite3
 
 PUBINCS = siod.h
 
-COMMON_SRCS=README.txt OLD_README.txt siod.c siod.h \
+COMMON_SRCS=README.md siod.c siod.h \
             siodm.c siodp.h slib.c sliba.c slibu.c  \
             ss.c ss.h trace.c md5.c md5.h \
-            gd.c  tar.c regex.c acct.c statfs.c \
-            parser_pratt.c sql_sqlite3.c
+            gd.c tar.c regex.c acct.c statfs.c \
+            parser_pratt.c sql_sqlite3.c siod_readline.c siod_readline.h
 
 REGEX_SRCS=siod_regex.html cclass.h regcomp.c regex2.h regfree.c \
            cname.h regerror.c utils.h engine.c regex.h regexec.c
@@ -379,8 +379,8 @@ gccflags:
 # Instead of copying additional files to the winsiod folder
 # these rules pull these extra files in.
 EXTRA_SRC_FOLDER=../archive
-EXTRA_SRC_FILES=acct.c cp-build.smd fork-test.scm build_vms.com \
-                setup_vms.com vms_opt_files.txt release.bat \
+EXTRA_SRC_FILES=acct.c cp-build.smd test-fork.scm  \
+                 release.bat \
                 siod-dist.sh $(MANPAGES:=.man)
 
 $(EXTRA_SRC_FILES):
