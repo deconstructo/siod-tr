@@ -1,10 +1,12 @@
-# Makefile for SIOD TR - The Reawakening
+# Makefile for SIOD under Unix.
 # George J. Carrette, gjc@alum.mit.edu
-#  Modifications by Scáth
 #
-#  2025-12-30 	  - Cleanup of a lot of old build targets.
-#  		  - The historical Makefile is in the attic directory
-#  		
+# 25-MAR-2014: this file was hacked to work in the winsiod
+# folder you get from the source downloaded from http://siod.codeplex.com/
+# svn co https://siod.svn.codeplex.com/svn siod-src
+# It has been tested with "make linux" under Ubuntu 13.1
+# There are a large amount of warnings.
+
 #
 # Note: The recursive call to make attempts to set LD_LIBRARY_PATH
 #       to include the current directory, which is required for the execution
@@ -34,11 +36,9 @@ CP_F=cp -f
 GCCW=-Wall -Wstrict-prototypes
 #
 SAMPLE_OBJS = sample.o slib.o sliba.o trace.o
-SIOD_OBJS_COMMON = slib.o sliba.o trace.o slibu.o md5.o siod_json.o
+SIOD_OBJS_COMMON = slib.o sliba.o trace.o slibu.o md5.o
+SQL_SYBASE_OBJS = sql_sybase.o sql_sybasec.o
 HS_REGEX_OBJS=regcomp.o regerror.o regexec.o regfree.o
-
-JSON_CFLAGS = `pkg-config --cflags libcjson`
-JSON_LDFLAGS = `pkg-config --libs libcjson`
 #
 #
 default:
@@ -52,7 +52,7 @@ default:
 	@echo  " install ... copies to $(BINDIR) etc, see Makefile for doc"
 	@echo  " clean   ... delete objects and binaries."
 
-.SUFFIXES: .o .so .man .txt .sl .smd .dylib
+.SUFFIXES: .o .so .man .txt .sl .smd
 
 # the build_driver is the target of the recursive call to make.
 
@@ -65,6 +65,112 @@ build_driver: $(PROGS) $(EXTRA_PROGS) $(CMDFILES)
 LDLP=LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH
 SLD=-DSIOD_LIB_DEFAULT=\\\"$(LIBSIODDIR)\\\"
 
+
+# Digital Equipment Corporation, OSF/1, DIGITAL UNIX.
+# uname = OSF1
+
+osf1:
+	$(MAKE) $(LDLP) \
+	PROGS="siod sample\
+              ndbm.so tar.so parser_pratt.so ss.so regex.so\
+              acct.so statfs.so" \
+	CFLAGS="$(CDEBUG) -readonly_strings -O2 $(SLD)" \
+	LD_EXE_FLAGS="-call_shared" \
+	LD_EXE_LIBS="-lm -lc" \
+	LD_LIB_FLAGS="-shared" \
+	LD_LIB_LIBS="-lm -lc" \
+	SO="so" \
+        build_driver
+
+# Hewlett-Packard Company, HP-UX
+# From: Craig Denson <denson@sdd.hp.com>, hacked up by gjc
+# uname = HP-UX
+
+hpux:
+	$(MAKE) $(LDLP) \
+	PROGS="siod ndbm.sl tar.sl parser_pratt.sl ss.sl \
+	       regex.sl" \
+	CFLAGS="-Ae -O +z -Dhpux -Dunix" \
+	LD_EXE_FLAGS="" \
+	LD_EXE_LIBS="-lm -ldld" \
+	LD_LIB_FLAGS="-b" \
+	LD_LIB_LIBS="-lm -ldld -lndbm" \
+	SO="sl" \
+        build_driver
+
+## hpux but with GCC by the author.
+
+hpuxgcc:
+	$(MAKE) $(LDLP) \
+	PROGS="siod ndbm.sl tar.sl parser_pratt.sl ss.sl \
+	       regex.sl regex.sl" \
+        HS_REGEX_OBJS_NEEDED="$(HS_REGEX_OBJS)" \
+        CC=gcc \
+        LD=ld \
+	CFLAGS="-O -fPIC $(SLD)" \
+	LD_EXE_FLAGS="" \
+	LD_EXE_LIBS="-lm -ldld" \
+	LD_LIB_FLAGS="-b" \
+	LD_LIB_LIBS="-lm -ldld -lndbm" \
+	SO="sl" \
+        build_driver
+
+
+### Sun Microsystems ###
+# Solaris 2.4, Sybase R10.0.2
+# From: Philip G Wilson <pgw9@columbia.edu>
+# hacked by gjc for dlopen.
+# uname = SunOS, uname -r = 5.3
+# Most recently tested in 5.5 by gjc.
+# Note: I recommend dealing with dynamic library management and name
+#       conflict issues on solaris by making soft links
+#       from /usr/lib/libSYBxxx.so -> /sybase/lib/libxxx.so
+#       for each shared library in /sybase/lib.
+
+solaris:
+	$(MAKE) $(LDLP) \
+	PROGS="siod ndbm.so tar.so parser_pratt.so ss.so regex.so" \
+	CC=gcc \
+	LD=ld \
+	CFLAGS="$(GCCW) $(CDEBUG) -DSUN5 -O2 $(SLD)" \
+	LD_EXE_FLAGS="-R $(LIBDIR) -R $(LIBSIODDIR)" \
+	LD_EXE_LIBS="-lm -lsocket -lnsl -lposix4 -dl" \
+	LD_LIB_FLAGS="-G" \
+	LD_LIB_LIBS="$(LD_EXE_LIBS)" \
+	SO="so" \
+        build_driver
+
+sybsolaris:
+	$(MAKE) $(LDLP) \
+	PROGS="siod ndbm.so tar.so parser_pratt.so ss.so regex.so\
+               sql_sybase.so gd.so sample" \
+	CC=gcc \
+	LD=gcc \
+	CFLAGS="$(GCCW) $(CDEBUG) -DSUN5 -O2 $(SLD)" \
+	LD_EXE_FLAGS="-Xlinker -R -Xlinker $(LIBDIR) -Xlinker -R -Xlinker $(LIBSIODDIR)" \
+	LD_EXE_LIBS="-lm -lsocket -lnsl -lposix4 -dl" \
+	LD_LIB_FLAGS="-G" \
+	LD_LIB_LIBS="$(LD_EXE_LIBS)" \
+	SO="so" \
+        build_driver
+
+## Sun Microsystems ###
+# SUN-OS 4.1.1
+# From: Leo Harten lph@paradigm.com
+# uname = ???, uname -r = ???
+
+sunos:
+	$(MAKE) $(LDLP) \
+	PROGS="siod tar.so parser_pratt.so ss.so" \
+	CC=gcc \
+	LD=gcc \
+	CFLAGS="$(GCCW) $(CDEBUG) -O2" \
+	LD_EXE_FLAGS="" \
+	LD_EXE_LIBS="-lm -lsocket -lnsl -lposix4 -dl" \
+	LD_LIB_FLAGS="-G" \
+	LD_LIB_LIBS="$(LD_EXE_LIBS)" \
+	SO="so" \
+        build_driver
 
 # Tested by DDC on an OrangePi  running Linux 6.1.43-rockchip-rk3588
 # under Ubuntu 22.04. Additional modules such as ndbm.c
@@ -84,7 +190,7 @@ linux:
 	LD_EXE_FLAGS="-rdynamic -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
 	LD_EXE_LIBS="-ldl" \
 	LD_LIB_FLAGS="-shared" \
-	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread $(JSON_LDFLAGS)" \
+	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread" \
 	SO="so" \
         build_driver
 
@@ -101,11 +207,75 @@ darwin:
 	LD_EXE_FLAGS="-Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
 	LD_EXE_LIBS="" \
 	LD_LIB_FLAGS="-dynamiclib" \
-	LD_LIB_LIBS="-lm -lsqlite3 -lpthread " \
+	LD_LIB_LIBS="-lm -lsqlite3 -lpthread" \
 	SO="dylib" \
         build_driver
 
 macos: darwin
+
+# adapt by Philippe Laliberte for MkLinux on ppc
+# I used -fsigned-char becaused their are unexplicited char
+# and we're using unsigned as a default.
+# uname -a = Linux <machine name> 2.0.28-osfmach3 #1 <date> ppc
+# Date: Tue, 22 Apr 1997 08:48:03 -0400
+# From: Philippe Laliberte <arsphl@oeil.mlink.net>
+
+linux-ppc:
+	@echo ""
+	@echo ""
+	@echo "You need a shared lib version of Linux to make this work"
+	@echo ""
+	@echo ""
+	@echo ""
+	@echo ""
+	@echo "This an experimental compilation for MkLinux"
+	@echo "I didn't test it on other PPC systems"
+	@echo "Philippe Laliberte"
+	@echo ""
+	@echo ""
+	@echo ""
+	@echo ""
+	@echo ""
+	@echo ""
+	@echo ""
+
+	$(MAKE) $(LDLP) \
+	PROGS="siod tar.so parser_pratt.so ss.so \
+	       regex.so acct.so md5.o" \
+	CC="gcc" \
+	LD="gcc" \
+	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -fsigned-char -O2 -D__USE_MISC" \
+	LD_EXE_FLAGS="" \
+	LD_EXE_LIBS="-ldl -lcrypt" \
+	LD_LIB_FLAGS="-shared" \
+	LD_LIB_LIBS="-lm -lc -ldl -lcrypt" \
+	SO="so" \
+        build_driver
+
+
+# Silicon Graphics, MIPS.
+# uname = IRIX
+
+sgi:
+	$(MAKE) $(LDLP) \
+	PROGS="siod \
+              ndbm.so tar.so parser_pratt.so ss.so regex.so"\
+        HS_REGEX_OBJS_NEEDED="$(HS_REGEX_OBJS)" \
+	CFLAGS="$(CDEBUG) -fullwarn -O2 -I. $(SLD)" \
+	LD_EXE_FLAGS="-call_shared -rpath $(LIBDIR):$(LIBSIODDIR)" \
+	LD_EXE_LIBS="-lm -lc" \
+	LD_LIB_FLAGS="-shared" \
+	LD_LIB_LIBS="-lm -lc" \
+	SO="so" \
+        build_driver
+
+sco:
+	-ln -s ssiod siod
+	$(MAKE) \
+	PROGS="sample ssiod" \
+	CFLAGS="$(CDEBUG)" \
+	LD_EXE_LIBS="-lm -ldl" \
+	build_driver
 
 unknown:
 	-ln -s ssiod siod
@@ -136,6 +306,8 @@ sample: $(SAMPLE_OBJS)
 .o.$(SO):
 	$(LD) -o $@ $(LD_LIB_FLAGS) $< libsiod.$(SO) $(LD_LIB_LIBS)
 
+.SUFFIXES: .o .so .dylib
+
 .o.$(SO):
 	$(LD) -o $@ $(LD_LIB_FLAGS) $< libsiod.$(SO) $(LD_LIB_LIBS)
 
@@ -146,7 +318,6 @@ sample: $(SAMPLE_OBJS)
 	$(LD) -o $@ $(LD_LIB_FLAGS) $< libsiod.so $(LD_LIB_LIBS)
 
 
-# Now the build rules for the extensions
 
 tar.$(SO): tar.o libsiod.$(SO)
 
@@ -179,8 +350,6 @@ sql_sqlite3.$(SO): sql_sqlite3.o libsiod.$(SO)
 	$(LD) -o sql_sqlite3.$(SO) $(LD_LIB_FLAGS) sql_sqlite3.o libsiod.$(SO) \
 	      -lsqlite3 $(LD_LIB_LIBS)
 
-siod_json.o: siod_json.c siod_json.h siod.h
-	 $(CC) $(CFLAGS) $(JSON_CFLAGS) -c siod_json.c
 
 siod.o: siod.c siod.h
 
@@ -198,6 +367,10 @@ ss.o:	ss.c siod.h ss.h
 
 md5.o:	md5.c md5.h
 
+
+
+ndbm.o: ndbm.c siod.h
+
 statfs.o: statfs.c siod.h
 
 tar.o: tar.c siod.h
@@ -214,7 +387,7 @@ MANPAGES = siod snapshot-dir snapshot-compare http-get \
 
 LIBFILES = fork-test.scm http-server.scm http-stress.scm http.scm \
            maze-support.scm pratt.scm siod.scm smtp.scm  \
-           cgi-echo.scm find-files.scm \
+            cgi-echo.scm find-files.scm \
            hello.scm parser_pratt.scm pop3.scm selfdoc.scm \
 	   sample.c siod.html piechart.scm cgi.scm ftp.scm \
            sql_sqlite3.scm test-sqlite3.scm
@@ -227,7 +400,7 @@ PUBINCS = siod.h
 COMMON_SRCS=README.txt OLD_README.txt siod.c siod.h \
             siodm.c siodp.h slib.c sliba.c slibu.c  \
             ss.c ss.h trace.c md5.c md5.h \
-            gd.c  tar.c regex.c acct.c statfs.c \
+            gd.c ndbm.c tar.c regex.c acct.c statfs.c \
             parser_pratt.c sql_sqlite3.c
 
 REGEX_SRCS=siod_regex.html cclass.h regcomp.c regex2.h regfree.c \
@@ -235,12 +408,14 @@ REGEX_SRCS=siod_regex.html cclass.h regcomp.c regex2.h regfree.c \
 
 UNIX_MK=Makefile
 
+VMS_MK=build_vms.com setup_vms.com vms_opt_files.txt
+
 NT_MK=libsiod.def parser_pratt.def \
       tar.def ss.def regex.def release.bat
 
 CMDSRCS = $(CMDFILES:=.smd)
 
-SRCFILES= $(COMMON_SRCS) $(UNIX_MK) $(NT_MK) fixcrlf.smd \
+SRCFILES= $(COMMON_SRCS) $(UNIX_MK) $(VMS_MK) $(NT_MK) fixcrlf.smd \
           siod-dist.sh $(REGEX_SRCS)
 
 DISTFILES= $(CMDSRCS) $(LIBFILES) $(SRCFILES) $(MANPAGES:=.man) \
@@ -318,6 +493,20 @@ WIN95BIN=./release/libsiod.dll ./release/libsiod.lib ./release/siod.exe \
 
 win95bin.zip: $(WIN95BIN)
 	zip -rj win95bin.zip $(WIN95BIN)
+
+PUBFILES=siod.html siod_regex.html OLD_README.txt README.txt siod.tar.gz siod.zip
+
+ftp.std.com: dist $(PUBFILES)
+	for X in $(PUBFILES); do \
+	  ftp-put $$X world.std.com /ftp/pub/$$LOGNAME/$$X ; \
+	done
+	touch ftp.std.com
+
+ftp.delphiforums.com: $(PUBFILES)
+	for X in $(PUBFILES); do \
+	  ftp-put $$X ftp.delphiforums.com web/$$X :rename=false ; \
+	done
+	touch ftp.delphiforums.com
 
 whatsup:
 	@rlog -R -L RCS/*

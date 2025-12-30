@@ -65,6 +65,9 @@ gjc@world.std.com
    Release 3.5 5-MAY-97 fixes, plus win95 "compiler" to create exe files.
    Release 3.6 5-APR-07. for Visual C++ Express Edition and CodePlex.com
 
+
+   Release TR-3.7.0 2025-12-30: include json support
+
   */
 
 #include <stdio.h>
@@ -95,7 +98,7 @@ static void init_slib_version(void)
 	NIL);}
 
 char * __stdcall siod_version(void)
-{return("TR-3.7.0 2025-12-28");}
+{return("TR-3.7.0 2025-12-30");}
 
 long nheaps = 2;
 LISP *heaps;

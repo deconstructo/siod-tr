@@ -97,6 +97,7 @@
 
 #include "siod.h"
 #include "siodp.h"
+#include "siod_json.h"
 #include "md5.h"
 
 static void init_slibu_version(void)
@@ -2053,6 +2054,7 @@ int __stdcall siod_main(int argc,char **argv, char **env)
  init_subrs();
  init_trace();
  init_slibu();
+ init_json_module();  /* Initialize JSON module */
  init_subr_1("__cgi-main",cgi_main);
  if (iargc == 0)
    retval = repl_driver(1,1,NULL);
