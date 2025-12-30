@@ -46,11 +46,18 @@ Take perfectly good vintage software and:
   - Complete API documentation
   - Working demo and test suite
 
+- **JSON**: Added JSON support
+
+- **Readline**: Added gnu readline support
+  - only triggers when siod is executed from a terminal
+
 - **Removed Legacy Cruft**:
   - mSQL bindings (obsolete)
   - Sybase bindings (obsolete)
   - Oracle bindings (obsolete)
   - NDBM (replaced by SQLite3)
+  - Deleted ancient build targets
+
 
 - **Build System**: Updated to use pkg-config for modern library detection
 
@@ -101,9 +108,8 @@ Utility libraries:
 
 ```
 siod-tr/
+├── attic/              # Old README and Makefile have been moved here 
 ├── docs/               # Module documentation
-├── gd.c                # Graphics bindings (modernized)
-├── sql_sqlite3.c       # Database bindings
 ├── tests/        	# Test suites
 ├── *-utilities.scm     # High-level helper libraries
 └── Makefile            # Build system (updated)
