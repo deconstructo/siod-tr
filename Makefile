@@ -22,7 +22,7 @@
 #       on some platforms.
 #
 # 
-IROOT=/usr/local
+IROOT=/home/yvain/.local
 MANSEC=1
 MANDIR=$(IROOT)/man/man$(MANSEC)
 BINDIR=$(IROOT)/bin
@@ -36,6 +36,13 @@ GCCW=-Wall -Wstrict-prototypes
 SAMPLE_OBJS = sample.o slib.o sliba.o trace.o
 SIOD_OBJS_COMMON = slib.o sliba.o trace.o slibu.o md5.o siod_json.o siod_readline.o
 HS_REGEX_OBJS=regcomp.o regerror.o regexec.o regfree.o
+
+# Raylib graphics support (optional)
+RAYLIB_AVAILABLE := $(shell test -f /usr/local/lib/libraylib.so && echo yes || echo no)
+ifeq ($(RAYLIB_AVAILABLE),yes)
+    RAYLIB_CFLAGS = -I/usr/locla/include -DHAVE_RAYLIB
+    RAYLIB_LDFLAGS = -L/usr/local/lib -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+endif
 
 JSON_CFLAGS = `pkg-config --cflags libcjson`
 JSON_LDFLAGS = `pkg-config --libs libcjson`
@@ -63,7 +70,7 @@ default:
 	@echo  " install ... copies to $(BINDIR) etc, see Makefile for doc"
 	@echo  " clean   ... delete objects and binaries."
 
-.SUFFIXES: .o .so .man .txt .sl .smd .dylib
+.SUFFIXES: .o .so .man .txt .sl .dylib
 
 # the build_driver is the target of the recursive call to make.
 
@@ -87,7 +94,7 @@ SLD=-DSIOD_LIB_DEFAULT=\\\"$(LIBSIODDIR)\\\"
 
 linux:
 	$(MAKE) $(LDLP) \
-	PROGS="siod tar.so parser_pratt.so ss.so gd.so \
+	PROGS="siod tar.so parser_pratt.so ss.so gd.so raylib.so \
 	       regex.so acct.so sql_sqlite3.so pthreads.so" \
 	CC="gcc" \
 	LD="gcc" \
@@ -104,7 +111,7 @@ linux:
 # uname = Darwin
 darwin:
 	$(MAKE) $(LDLP) \
-	PROGS="siod tar.dylib parser_pratt.dylib ss.dylib gd.dylib \
+	PROGS="siod tar.dylib parser_pratt.dylib ss.dylib gd.dylib raylib.dylib \
 	       regex.dylib  sql_sqlite3.dylib pthreads.dylib" \
 	CC="clang" \
 	LD="clang" \
@@ -174,6 +181,14 @@ gd.$(SO): gd.o libsiod.$(SO)
 	$(LD) -o gd.$(SO) $(LD_LIB_FLAGS) gd.o libsiod.$(SO) \
 	      `pkg-config --libs gdlib` $(LD_LIB_LIBS)
 
+# Raylib graphics library integration
+raylib.o: raylib.c
+	$(CC) $(CFLAGS) $(RAYLIB_CFLAGS) -c raylib.c
+
+raylib.$(SO): raylib.o libsiod.$(SO)
+	$(LD) -o raylib.$(SO) $(LD_LIB_FLAGS) raylib.o libsiod.$(SO) \
+	      $(RAYLIB_LDFLAGS) $(LD_LIB_LIBS)
+
 ndbm.$(SO): ndbm.o libsiod.$(SO)
 	$(LD) -o ndbm.$(SO) $(LD_LIB_FLAGS) ndbm.o libsiod.$(SO) \
                             $(LD_LIB_LIBS)
@@ -231,10 +246,12 @@ LIBFILES = http-server.scm http-stress.scm http.scm \
            cgi-echo.scm find-files.scm \
            hello.scm parser_pratt.scm pop3.scm selfdoc.scm \
 	   sample.c siod.html piechart.scm cgi.scm ftp.scm \
-           sql_sqlite3-utilities.scm gd-utilities.scm
+           sql_sqlite3-utilities.scm gd-utilities.scm \
+	   pthreads-utilities.scm
 
 SOLIBFILES=gd tar ss regex acct  parser_pratt \
-           statfs sql_sqlite3
+           statfs sql_sqlite3 raylib
+
 
 PUBINCS = siod.h
 
@@ -242,7 +259,7 @@ COMMON_SRCS=README.md siod.c siod.h \
             siodm.c siodp.h slib.c sliba.c slibu.c  \
             ss.c ss.h trace.c md5.c md5.h \
             gd.c tar.c regex.c acct.c statfs.c \
-            parser_pratt.c sql_sqlite3.c siod_readline.c siod_readline.h
+            parser_pratt.c sql_sqlite3.c siod_readline.c siod_readline.h raylib.c
 
 REGEX_SRCS=siod_regex.html cclass.h regcomp.c regex2.h regfree.c \
            cname.h regerror.c utils.h engine.c regex.h regexec.c
@@ -261,7 +278,7 @@ DISTFILES= $(CMDSRCS) $(LIBFILES) $(SRCFILES) $(MANPAGES:=.man) \
            $(MANPAGES:=.txt)
 
 INTO_BINDIR=$(CMDFILES) siod
-INTO_LIBDIR=libsiod.so libsiod.sl
+INTO_LIBDIR=libsiod.so 
 
 install: $(DISTFILES)
 	@echo "Note: This does not do a build. Only installs what already"
@@ -278,7 +295,7 @@ install: $(DISTFILES)
 	 $(CP_F) $$X $(LIBSIODDIR) ;\
 	done
 	-for X in $(SOLIBFILES) ; do \
-	  for E in so sl ; do \
+	  for E in so ; do \
 	   $(CP_F) $$X.$$E $(LIBSIODDIR) ;\
 	  done ;\
 	done

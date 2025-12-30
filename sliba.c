@@ -1784,6 +1784,12 @@ LISP latan(LISP x)
 LISP latan2(LISP x,LISP y)
 {return(flocons(atan2(get_c_double(x),get_c_double(y))));}
 
+LISP lfloor(LISP x) { return flocons(floor(FLONM(x))); }
+LISP lceiling(LISP x) { return flocons(ceil(FLONM(x))); }
+LISP lrnd(LISP x) { return flocons(round(FLONM(x))); }
+LISP ltruncate(LISP x) { return flocons(trunc(FLONM(x))); }
+LISP lmodulo(LISP x, LISP y) { return flocons(fmod(FLONM(x), FLONM(y))); }
+
 LISP hexstr(LISP a)
 {unsigned char *in;
  char *out;
@@ -2098,6 +2104,11 @@ void init_subrs_a(void)
  init_subr_1("acos",lacos);
  init_subr_1("atan",latan);
  init_subr_2("atan2",latan2);
+ init_subr_1("floor", lfloor);
+ init_subr_1("ceiling", lceiling);
+ init_subr_1("round", lrnd);
+ init_subr_1("truncate", ltruncate);
+ init_subr_2("modulo", lmodulo);
  init_subr_1("typeof",ltypeof);
  init_subr_1("caaar",caaar);
  init_subr_1("caadr",caadr);
