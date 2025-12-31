@@ -1790,6 +1790,29 @@ LISP lrnd(LISP x) { return flocons(round(FLONM(x))); }
 LISP ltruncate(LISP x) { return flocons(trunc(FLONM(x))); }
 LISP lmodulo(LISP x, LISP y) { return flocons(fmod(FLONM(x), FLONM(y))); }
 
+LISP lzerop(LISP x) {
+    return (FLONM(x) == 0.0) ? sym_t : NIL;
+}
+
+LISP lpositivep(LISP x) {
+    return (FLONM(x) > 0.0) ? sym_t : NIL;
+}
+
+LISP lnegativep(LISP x) {
+    return (FLONM(x) < 0.0) ? sym_t : NIL;
+}
+
+LISP levenp(LISP x) {
+    long n = (long)FLONM(x);
+    return (n % 2 == 0) ? sym_t : NIL;
+}
+
+LISP loddp(LISP x) {
+    long n = (long)FLONM(x);
+    return (n % 2 != 0) ? sym_t : NIL;
+}
+
+
 LISP hexstr(LISP a)
 {unsigned char *in;
  char *out;
@@ -2029,6 +2052,35 @@ static LISP parser_fasl_hook(LISP env,LISP f)
  else
    return(result);}
 
+static LISP lterpri(void) {
+    putchar('\n');
+    fflush(stdout);
+    return NIL;
+}
+
+static LISP lnewline(void) {
+    return lterpri();
+}
+
+static LISP lprinc(LISP obj) {
+    if (TYPEP(obj, tc_flonum)) {
+        printf("%g", FLONM(obj));
+    } else if (TYPEP(obj, tc_symbol)) {
+        printf("%s", PNAME(obj));
+    } else if (TYPEP(obj, tc_string)) {
+        printf("%s", obj->storage_as.string.data);
+    } else {
+        lprin1(obj);
+    }
+    fflush(stdout);
+    return NIL;
+}
+
+static LISP ldisplay(LISP obj) {
+    return lprinc(obj);
+}
+
+
 void init_subrs_a(void)
 {init_subr_2("aref",aref1);
  init_subr_3("aset",aset1);
@@ -2084,7 +2136,7 @@ void init_subrs_a(void)
  init_subr_3("benchmark-funcall1",benchmark_funcall1);
  init_lsubr("benchmark-funcall2",benchmark_funcall2);
  init_subr_3("benchmark-eval",benchmark_eval);
- init_subr_2("fmod",lfmod);
+ init_subr_2("%",lfmod);
  init_subr_2("subset",lsubset);
  init_subr_1("base64encode",base64encode);
  init_subr_1("base64decode",base64decode);
@@ -2104,11 +2156,6 @@ void init_subrs_a(void)
  init_subr_1("acos",lacos);
  init_subr_1("atan",latan);
  init_subr_2("atan2",latan2);
- init_subr_1("floor", lfloor);
- init_subr_1("ceiling", lceiling);
- init_subr_1("round", lrnd);
- init_subr_1("truncate", ltruncate);
- init_subr_2("modulo", lmodulo);
  init_subr_1("typeof",ltypeof);
  init_subr_1("caaar",caaar);
  init_subr_1("caadr",caadr);
@@ -2148,5 +2195,25 @@ void init_subrs_a(void)
  init_subr_1("parser_fasl",parser_fasl);
  setvar(cintern("*parser_fasl.scm-loaded*"),a_true_value(),NIL);
  init_subr_2("parser_fasl_hook",parser_fasl_hook);
+
+/* Rounding Functions */
+ init_subr_1("floor", lfloor);
+ init_subr_1("ceiling", lceiling);
+ init_subr_1("round", lrnd);
+ init_subr_1("truncate", ltruncate);
+
+ /* Numeric Predicates */
+ init_subr_1("zero?", lzerop);
+ init_subr_1("positive?", lpositivep);
+ init_subr_1("negative?", lnegativep);
+ init_subr_1("even?", levenp);
+ init_subr_1("odd?", loddp);
+
+ /* I/O Functions */
+ init_subr_0("terpri", lterpri);
+ init_subr_0("newline", lnewline);
+ init_subr_1("princ", lprinc);
+ init_subr_1("display", ldisplay);
+
  init_sliba_version();}
 

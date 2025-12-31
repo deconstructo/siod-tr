@@ -2637,9 +2637,6 @@ static LISP os_classification(void)
 #ifdef WIN32
   return(cintern("win32"));
 #endif
-#ifdef VMS
-  return(cintern("vms"));
-#endif
   return(NIL);}
 
 void init_subrs_1(void)

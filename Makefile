@@ -154,9 +154,6 @@ sample: $(SAMPLE_OBJS)
 .o.$(SO):
 	$(LD) -o $@ $(LD_LIB_FLAGS) $< libsiod.$(SO) $(LD_LIB_LIBS)
 
-.o.$(SO):
-	$(LD) -o $@ $(LD_LIB_FLAGS) $< libsiod.$(SO) $(LD_LIB_LIBS)
-
 .o.dylib:
 	$(LD) -o $@ $(LD_LIB_FLAGS) $< libsiod.dylib $(LD_LIB_LIBS)
 
@@ -188,10 +185,6 @@ raylib.o: raylib.c
 raylib.$(SO): raylib.o libsiod.$(SO)
 	$(LD) -o raylib.$(SO) $(LD_LIB_FLAGS) raylib.o libsiod.$(SO) \
 	      $(RAYLIB_LDFLAGS) $(LD_LIB_LIBS)
-
-ndbm.$(SO): ndbm.o libsiod.$(SO)
-	$(LD) -o ndbm.$(SO) $(LD_LIB_FLAGS) ndbm.o libsiod.$(SO) \
-                            $(LD_LIB_LIBS)
 
 regex.$(SO): regex.o libsiod.$(SO) $(HS_REGEX_OBJS_NEEDED)
 	$(LD) -o regex.$(SO) $(LD_LIB_FLAGS) regex.o $(HS_REGEX_OBJS_NEEDED) \
@@ -247,7 +240,7 @@ LIBFILES = http-server.scm http-stress.scm http.scm \
            hello.scm parser_pratt.scm pop3.scm selfdoc.scm \
 	   sample.c siod.html piechart.scm cgi.scm ftp.scm \
            sql_sqlite3-utilities.scm gd-utilities.scm \
-	   pthreads-utilities.scm
+	   pthreads-utilities.scm help.scm qol.scm
 
 SOLIBFILES=gd tar ss regex acct  parser_pratt \
            statfs sql_sqlite3 raylib
@@ -375,6 +368,8 @@ ftp-put: ftp-put.smd
 ftp-test: ftp-test.smd
 
 ftp-get: ftp-get.smd
+
+proxy-server: proxy-server.smd
 
 gccflags:
 	@echo "*********************************"
