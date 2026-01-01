@@ -384,7 +384,7 @@ void init_baroque(void) {
 
     init_subr_1("sinh", lsinh_complex);
     init_subr_1("cosh", lcosh_complex);
-    init_subr_1("tahn", ltanh_complex);
+    init_subr_1("tanh", ltanh_complex);
     init_subr_1("asinh", lasinh_complex);
     init_subr_1("acosh", lacosh_complex);
     init_subr_1("atanh", latanh_complex);
@@ -392,5 +392,6 @@ void init_baroque(void) {
 
     init_subr_1("conj", lconj_complex);
     init_subr_1("proj", lproj_complex);
+    init_subr_1("abs", labs_complex);
 
 }
