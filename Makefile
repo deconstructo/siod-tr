@@ -34,7 +34,8 @@ CP_F=cp -f
 GCCW=-Wall -Wstrict-prototypes
 #
 SAMPLE_OBJS = sample.o slib.o sliba.o trace.o
-SIOD_OBJS_COMMON = slib.o sliba.o trace.o slibu.o md5.o siod_json.o siod_readline.o
+SIOD_OBJS_COMMON = slib.o sliba.o trace.o slibu.o md5.o \
+		   siod_json.o siod_readline.o baroque.o
 HS_REGEX_OBJS=regcomp.o regerror.o regexec.o regfree.o
 
 # Raylib graphics support (optional)
@@ -203,6 +204,10 @@ siod_json.o: siod_json.c siod_json.h siod.h
 
 siod_readline.o: siod_readline.c siod_readline.h siod.h
 	 $(CC) $(CFLAGS) $(READLINE_CFLAGS) -c siod_readline.c
+
+baroque.o: baroque.c
+	$(CC) $(CFLAGS) -c baroque.c
+
 
 siod.o: siod.c siod.h
 

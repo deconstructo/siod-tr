@@ -2508,7 +2508,7 @@ LISP parse_number(LISP x)
 
 void __stdcall init_subrs(void)
 {init_subrs_1();
- init_subrs_a();}
+ init_subrs_a(); }
 
 LISP closure_code(LISP exp)
 {return(exp->storage_as.closure.code);}

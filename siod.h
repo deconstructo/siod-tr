@@ -12,6 +12,8 @@
  * siod-tng
  */
 
+#include <complex.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -23,6 +25,7 @@ struct obj
  union {struct {struct obj * car;
 		struct obj * cdr;} cons;
 	struct {double data;} flonum;
+	struct {double complex data;} cmpnum;
 	struct {char *pname;
 		struct obj * vcell;} symbol;
 	struct {char *name;
@@ -64,6 +67,7 @@ struct obj
         struct {void * pv ;                 } c_ptr ;
 	struct {FILE *f;
 		char *name;} c_file;}
+
  storage_as;};
 
 #define CAR(x) ((*x).storage_as.cons.car)
@@ -80,6 +84,7 @@ struct obj
 #define SUBRF(x) (*((*x).storage_as.subr.f))
 #define FLONM(x) ((*x).storage_as.flonum.data)
 #define CPTR(x)   ((*x).storage_as.c_ptr.pv)
+#define CMPNUM(x) ((x)->storage_as.cmpnum.data)
 
 #define NIL ((struct obj *) 0)
 #define EQ(x,y) ((x) == (y))
@@ -120,14 +125,17 @@ struct obj
 
 
 #define tc_user_min 50
+
 #define tc_user_max 100
+
+#define tc_complex 51
 
 #define FO_fetch 127
 #define FO_store 126
 #define FO_list  125
 #define FO_listd 124
 
-#define tc_table_dim 100
+#define tc_table_dim 200
 
 typedef struct obj* LISP;
 typedef LISP (*SUBR_FUNC)(void); 
@@ -142,11 +150,25 @@ typedef LISP (*SUBR_FUNC)(void);
 #define NFLONUMP(x) NTYPEP(x,tc_flonum)
 #define NSYMBOLP(x) NTYPEP(x,tc_symbol)
 
+
+/* Complex number macros */
+//#define COMPLEXP(x) (TYPE(x) == tc_complex)
+#define COMPLEXP(x) TYPEP(x,tc_complex)
+#define NCOMPLEXP(x) NTYPEP(x,tc_complex)
+#define COMPLEXREAL(x) (((complex_cell *)(x))->real)
+#define COMPLEXIMAG(x) (((complex_cell *)(x))->imag)
+
+#define QUARTONIONP(x) TYPEP(x,tc_quartonion)
+#define NQUARTONIONP(x) NTYPEP(x,tc_quartonion)
+
 #define TKBUFFERN 5120
 
 #ifndef WIN32
 #define __stdcall
 #endif
+
+
+
 
 
 struct gen_readio
@@ -223,6 +245,8 @@ void gc_protect_sym(LISP *location,char *st);
 
 void __stdcall init_storage(void);
 void __stdcall init_slibu(void);
+void __stdcall init_baroque(void);
+
 
 void init_subr(char *name, long type, SUBR_FUNC fcn);
 void init_subr_0(char *name, LISP (*fcn)(void));
@@ -369,6 +393,10 @@ long nlength(LISP obj);
 int __stdcall siod_main(int argc,char **argv, char **env);
 void __stdcall siod_shuffle_args(int *pargc,char ***pargv);
 void __stdcall siod_init(int argc,char **argv);
+
+/* Complex numbers - baroque.c */
+extern LISP make_complex(double real, double imag);
+extern void init_baroque(void);
 
 #if defined(WIN32) && defined(_WINDOWS_)
 LISP llast_win32_errmsg(DWORD);

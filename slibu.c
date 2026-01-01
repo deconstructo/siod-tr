@@ -2057,6 +2057,8 @@ int __stdcall siod_main(int argc,char **argv, char **env)
  init_slibu();
  init_json_module();  /* Initialize JSON module */
  init_readline();     /* Initialize readline support */
+ init_baroque();      /* Complex numbers and more */
+
  init_subr_1("__cgi-main",cgi_main);
  if (iargc == 0)
    {/* Interactive REPL - use readline if available */

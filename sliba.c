@@ -2069,8 +2069,11 @@ static LISP lprinc(LISP obj) {
         printf("%s", PNAME(obj));
     } else if (TYPEP(obj, tc_string)) {
         printf("%s", obj->storage_as.string.data);
+    } else if (TYPEP(obj, tc_complex)) {
+        double complex c = CMPNUM(obj);
+        printf("#C(%g %g)", creal(c), cimag(c));
     } else {
-        lprin1(obj);
+        lprin1(obj,NIL);
     }
     fflush(stdout);
     return NIL;
