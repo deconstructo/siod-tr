@@ -43,8 +43,22 @@ struct obj
  	      } subr4;
  	struct {char *name;
  		struct obj * (*f)(struct obj *, struct obj *, struct obj *,
-				  struct obj *,struct obj *);
+				  struct obj *, struct obj *);
  	      } subr5;
+ 	struct {char *name;
+ 		struct obj * (*f)(struct obj *, struct obj *, struct obj *,
+				  struct obj *, struct obj *, struct obj *);
+ 	      } subr6;
+ 	struct {char *name;
+ 		struct obj * (*f)(struct obj *, struct obj *, struct obj *,
+				  struct obj *, struct obj *, struct obj *,
+				  struct obj *);
+ 	      } subr7;
+ 	struct {char *name;
+ 		struct obj * (*f)(struct obj *, struct obj *, struct obj *,
+				  struct obj *, struct obj *, struct obj *,
+				  struct obj *, struct obj *);
+ 	      } subr8;
  	struct {char *name;
  		struct obj * (*f)(struct obj **, struct obj **);} subrm;
 	struct {char *name;
@@ -80,6 +94,9 @@ struct obj
 #define SUBR3(x) (*((*x).storage_as.subr3.f))
 #define SUBR4(x) (*((*x).storage_as.subr4.f))
 #define SUBR5(x) (*((*x).storage_as.subr5.f))
+#define SUBR6(x) (*((*x).storage_as.subr6.f))
+#define SUBR7(x) (*((*x).storage_as.subr7.f))
+#define SUBR8(x) (*((*x).storage_as.subr8.f))
 #define SUBRM(x) (*((*x).storage_as.subrm.f))
 #define SUBRF(x) (*((*x).storage_as.subr.f))
 #define FLONM(x) ((*x).storage_as.flonum.data)
@@ -121,14 +138,16 @@ struct obj
 #define tc_subr_2n 21
 #define tc_cptr         22
 #define tc_cptr_array   23
+#define tc_subr_6	24
+#define tc_subr_7	25
+#define tc_subr_8	26
+
+#define tc_complex	30
+
 #define FO_comment 35
 
-
 #define tc_user_min 50
-
 #define tc_user_max 100
-
-#define tc_complex 51
 
 #define FO_fetch 127
 #define FO_store 126
@@ -256,6 +275,10 @@ void init_subr_2n(char *name, LISP (*fcn)(LISP,LISP));
 void init_subr_3(char *name, LISP (*fcn)(LISP,LISP,LISP));
 void init_subr_4(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP));
 void init_subr_5(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP));
+void init_subr_6(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP,LISP));           /* NEW */
+void init_subr_7(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP,LISP,LISP));      /* NEW */
+void init_subr_8(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP,LISP,LISP,LISP)); /* NEW */
+
 void init_lsubr(char *name, LISP (*fcn)(LISP));
 void init_fsubr(char *name, LISP (*fcn)(LISP,LISP));
 void init_msubr(char *name, LISP (*fcn)(LISP *,LISP *));

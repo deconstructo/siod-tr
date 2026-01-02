@@ -35,7 +35,8 @@ GCCW=-Wall -Wstrict-prototypes
 #
 SAMPLE_OBJS = sample.o slib.o sliba.o trace.o
 SIOD_OBJS_COMMON = slib.o sliba.o trace.o slibu.o md5.o \
-		   siod_json.o siod_readline.o baroque.o
+		   siod_json.o siod_readline.o baroque.o 
+
 HS_REGEX_OBJS=regcomp.o regerror.o regexec.o regfree.o
 
 # Raylib graphics support (optional)
@@ -45,8 +46,21 @@ ifeq ($(RAYLIB_AVAILABLE),yes)
     RAYLIB_LDFLAGS = -L/usr/local/lib -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 endif
 
-JSON_CFLAGS = `pkg-config --cflags libcjson`
-JSON_LDFLAGS = `pkg-config --libs libcjson`
+# PLplot plotting support (optional)
+PLPLOT_AVAILABLE := $(shell pkg-config --exists plplot && echo yes || echo no)
+ifeq ($(PLPLOT_AVAILABLE),yes)
+    PLPLOT_CFLAGS := $(shell pkg-config --cflags plplot)
+    PLPLOT_LIBS := $(shell pkg-config --libs plplot)
+else
+    $(warning PlPlot not found)
+endif
+
+CJSON_AVAILABLE := $(shell pkg-config --exists libcjson && echo yes || echo no)
+ifeq ($(CJSON_AVAILABLE), yes)
+    JSON_CFLAGS = `pkg-config --cflags libcjson`
+    JSON_LDFLAGS = `pkg-config --libs libcjson`
+endif
+
 
 # Readline support (optional but recommended)
 # Check if readline is available
@@ -71,7 +85,7 @@ default:
 	@echo  " install ... copies to $(BINDIR) etc, see Makefile for doc"
 	@echo  " clean   ... delete objects and binaries."
 
-.SUFFIXES: .o .so .man .txt .sl .dylib
+.SUFFIXES: .o .so .man .txt .sl .dylib .smd
 
 # the build_driver is the target of the recursive call to make.
 
@@ -96,7 +110,8 @@ SLD=-DSIOD_LIB_DEFAULT=\\\"$(LIBSIODDIR)\\\"
 linux:
 	$(MAKE) $(LDLP) \
 	PROGS="siod tar.so parser_pratt.so ss.so gd.so raylib.so \
-	       regex.so acct.so sql_sqlite3.so pthreads.so" \
+	       regex.so acct.so sql_sqlite3.so pthreads.so \
+	       plplot.so" \
 	CC="gcc" \
 	LD="gcc" \
 	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 -D__USE_MISC -D__USE_GNU -D__USE_SVID -D__USE_XOPEN_EXTENDED -D__USE_XOPEN $(SLD) $(READLINE_CFLAGS)" \
@@ -199,11 +214,18 @@ sql_sqlite3.$(SO): sql_sqlite3.o libsiod.$(SO)
 	$(LD) -o sql_sqlite3.$(SO) $(LD_LIB_FLAGS) sql_sqlite3.o libsiod.$(SO) \
 	      -lsqlite3 $(LD_LIB_LIBS)
 
+plplot.$(SO): siod_plplot.o  libsiod.$(SO)
+	$(LD) -o plplot.$(SO) $(LD_LIB_FLAGS) siod_plplot.o libsiod.$(SO) \
+	      -lplplot $(LD_LIB_LIBS)
+
 siod_json.o: siod_json.c siod_json.h siod.h
 	 $(CC) $(CFLAGS) $(JSON_CFLAGS) -c siod_json.c
 
 siod_readline.o: siod_readline.c siod_readline.h siod.h
-	 $(CC) $(CFLAGS) $(READLINE_CFLAGS) -c siod_readline.c
+	$(CC) $(CFLAGS) $(READLINE_CFLAGS) -c siod_readline.c
+
+siod_plplot.o: siod_plplot.c siod.h
+	$(CC) $(CFLAGS) $(PLPLOT_CFLAGS) -c siod_plplot.c
 
 baroque.o: baroque.c
 	$(CC) $(CFLAGS) -c baroque.c

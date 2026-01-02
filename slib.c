@@ -1101,6 +1101,15 @@ void init_subr_4(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP))
 void init_subr_5(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP))
 {init_subr(name,tc_subr_5,(SUBR_FUNC)fcn);}
 
+void init_subr_6(char *name, LISP (*fcn)(LISP, LISP, LISP, LISP, LISP, LISP))
+{init_subr(name,tc_subr_6,(SUBR_FUNC)fcn);}
+
+void init_subr_7(char *name, LISP (*fcn)(LISP, LISP, LISP, LISP, LISP, LISP, LISP))
+{init_subr(name,tc_subr_7,(SUBR_FUNC)fcn);}
+
+void init_subr_8(char *name, LISP (*fcn)(LISP, LISP, LISP, LISP, LISP, LISP, LISP, LISP))
+{init_subr(name,tc_subr_8,(SUBR_FUNC)fcn);}
+
 void init_lsubr(char *name, LISP (*fcn)(LISP))
 {init_subr(name,tc_lsubr,(SUBR_FUNC)fcn);}
 
@@ -1170,6 +1179,9 @@ LISP gc_relocate(LISP x)
     case tc_subr_3:
     case tc_subr_4:
     case tc_subr_5:
+    case tc_subr_6:
+    case tc_subr_7:
+    case tc_subr_8:
     case tc_lsubr:
     case tc_fsubr:
     case tc_msubr:
@@ -1221,6 +1233,9 @@ void scan_newspace(LISP newspace)
        case tc_subr_3:
        case tc_subr_4:
        case tc_subr_5:
+       case tc_subr_6:
+       case tc_subr_7:
+       case tc_subr_8:
        case tc_lsubr:
        case tc_fsubr:
        case tc_msubr:
@@ -1246,6 +1261,9 @@ void free_oldspace(LISP space,LISP end)
 	case tc_subr_3:
 	case tc_subr_4:
 	case tc_subr_5:
+	case tc_subr_6:
+	case tc_subr_7:
+	case tc_subr_8:
 	case tc_lsubr:
 	case tc_fsubr:
 	case tc_msubr:
@@ -1390,6 +1408,9 @@ void gc_mark(LISP ptr)
     case tc_subr_3:
     case tc_subr_4:
     case tc_subr_5:
+    case tc_subr_6:
+    case tc_subr_7:
+    case tc_subr_8:
     case tc_lsubr:
     case tc_fsubr:
     case tc_msubr:
@@ -1465,6 +1486,9 @@ void gc_sweep(void)
 	      case tc_subr_3:
 	      case tc_subr_4:
 	      case tc_subr_5:
+	      case tc_subr_6:
+	      case tc_subr_7:
+	      case tc_subr_8:
 	      case tc_lsubr:
 	      case tc_fsubr:
 	      case tc_msubr:
@@ -1676,6 +1700,45 @@ LISP leval(LISP x,LISP env)
 			     leval(car(cdr(x)),env),
 			     leval(car(cdr(cdr(x))),env),
 			     leval(car(cdr(cdr(cdr(x)))),env)));
+ 	/* NEW: 6-argument functions */
+	 case tc_subr_6:
+	   x = CDR(x);
+	   arg1 = leval(car(x),env);
+	   x = NULLP(x) ? NIL : CDR(x);
+	   return(SUBR6(tmp)(arg1,
+			     leval(car(x),env),
+			     leval(car(cdr(x)),env),
+			     leval(car(cdr(cdr(x))),env),
+			     leval(car(cdr(cdr(cdr(x)))),env),
+			     leval(car(cdr(cdr(cdr(cdr(x))))),env)));
+
+	/* NEW: 7-argument functions */
+	 case tc_subr_7:
+	   x = CDR(x);
+	   arg1 = leval(car(x),env);
+	   x = NULLP(x) ? NIL : CDR(x);
+	   return(SUBR7(tmp)(arg1,
+			     leval(car(x),env),
+			     leval(car(cdr(x)),env),
+			     leval(car(cdr(cdr(x))),env),
+			     leval(car(cdr(cdr(cdr(x)))),env),
+			     leval(car(cdr(cdr(cdr(cdr(x))))),env),
+			     leval(car(cdr(cdr(cdr(cdr(cdr(x)))))),env)));
+
+	/* NEW: 8-argument functions */
+	 case tc_subr_8:
+	   x = CDR(x);
+	   arg1 = leval(car(x),env);
+	   x = NULLP(x) ? NIL : CDR(x);
+	   return(SUBR8(tmp)(arg1,
+			     leval(car(x),env),
+			     leval(car(cdr(x)),env),
+			     leval(car(cdr(cdr(x))),env),
+			     leval(car(cdr(cdr(cdr(x)))),env),
+			     leval(car(cdr(cdr(cdr(cdr(x))))),env),
+			     leval(car(cdr(cdr(cdr(cdr(cdr(x)))))),env),
+			     leval(car(cdr(cdr(cdr(cdr(cdr(cdr(x))))))),env)));
+
 
 	 case tc_lsubr:
 	   return(SUBR1(tmp)(leval_args(CDR(x),env)));

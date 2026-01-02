@@ -593,6 +593,9 @@ long c_sxhash(LISP obj,long n)
     case tc_subr_3:
     case tc_subr_4:
     case tc_subr_5:
+    case tc_subr_6:
+    case tc_subr_7:
+    case tc_subr_8:
     case tc_lsubr:
     case tc_fsubr:
     case tc_msubr:
@@ -1875,6 +1878,9 @@ LISP ltypeof(LISP obj)
     case tc_subr_3: return(cintern("tc_subr_3"));
     case tc_subr_4: return(cintern("tc_subr_4"));
     case tc_subr_5: return(cintern("tc_subr_5"));
+    case tc_subr_6: return(cintern("tc_subr_6"));
+    case tc_subr_7: return(cintern("tc_subr_7"));
+    case tc_subr_8: return(cintern("tc_subr_8"));
     case tc_lsubr: return(cintern("tc_lsubr"));
     case tc_fsubr: return(cintern("tc_fsubr"));
     case tc_msubr: return(cintern("tc_msubr"));
