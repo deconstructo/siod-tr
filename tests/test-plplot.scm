@@ -4,10 +4,30 @@
 ;;; Run all tests: (load "test-plplot.scm") (run-all-tests)
 ;;; Run specific test: (test-basic-line-plot)
 
+(require-so (so-ext "plplot"))
 
 (define test-count 0)
 (define pass-count 0)
 (define fail-count 0)
+
+;;; Map function over list
+(define (map f lst)
+  (if (null? lst)
+      '()
+      (cons (f (car lst)) (map f (cdr lst)))))
+
+;;; Filter list by predicate
+(define (filter pred lst)
+  (cond ((null? lst) '())
+        ((pred (car lst))
+         (cons (car lst) (filter pred (cdr lst))))
+        (else (filter pred (cdr lst)))))
+
+;;; Reduce/fold left
+(define (foldl f acc lst)
+  (if (null? lst)
+      acc
+      (foldl f (f acc (car lst)) (cdr lst))))
 
 ;;; Test infrastructure
 (define (test-start name)
@@ -69,7 +89,7 @@
 
 (define (test-basic-line-plot)
   (test-start "Basic line plot")
-  (plot-device "nulldriver")  ; Use null driver for headless testing
+  (plot-device "null")  ; Use null driver for headless testing
   (plot-init)
   
   (let ((x '(0.0 1.0 2.0 3.0 4.0))
@@ -87,7 +107,7 @@
 
 (define (test-multiple-lines)
   (test-start "Multiple lines with colors")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (let ((x '(0.0 0.5 1.0 1.5 2.0))
@@ -112,7 +132,7 @@
 
 (define (test-points)
   (test-start "Points with symbols")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (let ((x '(1.0 2.0 3.0 4.0 5.0))
@@ -133,7 +153,7 @@
 
 (define (test-histogram)
   (test-start "Histogram")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (let ((data '(1.2 2.3 2.5 3.1 3.4 3.8 4.2 4.5 4.8 5.1
@@ -154,7 +174,7 @@
 
 (define (test-error-bars)
   (test-start "Error bars")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (let ((x '(1.0 2.0 3.0 4.0 5.0))
@@ -180,7 +200,7 @@
 
 (define (test-log-scale)
   (test-start "Logarithmic scale")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (let ((x '(1.0 10.0 100.0 1000.0))
@@ -201,7 +221,7 @@
 
 (define (test-subplots)
   (test-start "Subplots (2x2 grid)")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   (plot-subplot 2 2)
   
@@ -239,7 +259,7 @@
 
 (define (test-3d-line)
   (test-start "3D line plot")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (let ((x '(0.0 1.0 2.0 3.0 4.0))
@@ -261,7 +281,7 @@
 
 (define (test-3d-surface)
   (test-start "3D surface plot")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (let ((x '(0.0 1.0 2.0))
@@ -314,7 +334,7 @@
 
 (define (test-custom-colors)
   (test-start "Custom RGB colors")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (let ((x '(0.0 1.0 2.0 3.0 4.0))
@@ -336,7 +356,7 @@
 
 (define (test-array-mismatch)
   (test-start "Array length mismatch error handling")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (let ((caught #f))
@@ -360,14 +380,13 @@
 
 (define (test-sine-wave)
   (test-start "Sine wave plot")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-init)
   
   (define (range start end step)
-    (let loop ((x start) (acc '()))
-      (if (> x end)
-          (reverse acc)
-          (loop (+ x step) (cons x acc)))))
+    (if (> start end)
+        '()
+        (cons start (range (+ start step) end step))))
   
   (let ((x (range 0.0 6.28 0.1)))
     (plot-env 0.0 6.28 -1.0 1.0)
@@ -385,7 +404,7 @@
 
 (define (test-background-color)
   (test-start "Background color")
-  (plot-device "nulldriver")
+  (plot-device "null")
   (plot-background-color 240 240 240)  ; Light gray
   (plot-init)
   
@@ -460,10 +479,9 @@
   (plot-init)
   
   (define (range start end step)
-    (let loop ((x start) (acc '()))
-      (if (> x end)
-          (reverse acc)
-          (loop (+ x step) (cons x acc)))))
+    (if (> start end)
+        '()
+        (cons start (range (+ start step) end step))))
   
   (let ((x (range 0.0 6.28 0.05)))
     (plot-env 0.0 6.28 -1.0 1.0)
