@@ -598,6 +598,37 @@ LISP siod_plot_mtex(LISP side, LISP disp, LISP pos, LISP just, LISP text) {
 /* ================================================================
  * Utility Functions
  * ================================================================ */
+/* list available devices */
+LISP siod_plot_list_devices(void) {
+    /* PLplot doesn't have a clean API to enumerate devices at runtime.
+     * The best we can do is return a list of commonly available devices.
+     * The actual availability depends on which drivers are installed.
+     */
+    
+    const char *common_devices[] = {
+        "pdf", "pdfqt", "svg", "svgqt", "ps", "psc",
+        "png", "pngqt", "xwin", "qtwidget", "xcairo",
+        "pngcairo", "pdfcairo", "pscairo", "svgcairo",
+        "epsqt", "null", "mem",
+        NULL
+    };
+    
+    LISP result = NIL;
+    int i;
+    
+    /* Build list in reverse */
+    for (i = 0; common_devices[i] != NULL; i++) {
+        /* Intentionally empty - just counting */
+    }
+    
+    /* Build in reverse order so final list is correct */
+    for (i = i - 1; i >= 0; i--) {
+        const char *dev = common_devices[i];
+        result = cons(strcons(strlen(dev), dev), result);
+    }
+    
+    return result;
+}
 
 /* (plot-clear) - Clear current plot */
 LISP siod_plot_clear(void) {
@@ -665,6 +696,7 @@ void init_subr_plplot(void) {
     init_subr_5("plot-mtex", siod_plot_mtex);
     
     /* Utilities */
+    init_subr_0("plot-list-devices",siod_plot_list_devices);
     init_subr_0("plot-clear", siod_plot_clear);
     init_subr_0("plot-flush", siod_plot_flush);
     init_subr_0("plot-version", siod_plot_version);
