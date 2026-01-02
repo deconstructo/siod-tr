@@ -19,15 +19,6 @@ The goal is a proper mathematical computing environment where you can:
 - Reclaim missed opportunities from the 1990s
 - Make things work the way they *should* have
 
-## What's "Scáthify"?
-
-Take perfectly good vintage software and:
-1. Rip out the legacy cruft (bye mSQL, Sybase, Oracle, NDBM)
-2. Modernize what's useful (hello libgd 2.3.3, JSON, SQLite3)
-3. Fix security holes (mkstemp > mktemp)
-4. Actually document things
-5. Add the mathematical tools you actually need
-6. Do it with a chaotic goblin energy
 
 ## What's Been Done
 **Cleanup of legacy cruft**:
