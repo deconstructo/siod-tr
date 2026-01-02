@@ -267,7 +267,8 @@ LIBFILES = http-server.scm http-stress.scm http.scm \
            hello.scm parser_pratt.scm pop3.scm selfdoc.scm \
 	   sample.c siod.html piechart.scm cgi.scm ftp.scm \
            sql_sqlite3-utilities.scm gd-utilities.scm \
-	   pthreads-utilities.scm help.scm qol.scm
+	   pthreads-utilities.scm help.scm qol.scm \
+	   plplot-utilities.scm compat.scm
 
 SOLIBFILES=gd tar ss regex acct  parser_pratt \
            statfs sql_sqlite3 raylib plplot
