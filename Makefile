@@ -111,7 +111,7 @@ linux:
 	$(MAKE) $(LDLP) \
 	PROGS="siod tar.so parser_pratt.so ss.so gd.so raylib.so \
 	       regex.so acct.so sql_sqlite3.so pthreads.so \
-	       plplot.so" \
+	       plplot.so symengine.so" \
 	CC="gcc" \
 	LD="gcc" \
 	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 -D__USE_MISC -D__USE_GNU -D__USE_SVID -D__USE_XOPEN_EXTENDED -D__USE_XOPEN $(SLD) $(READLINE_CFLAGS)" \
@@ -217,6 +217,18 @@ sql_sqlite3.$(SO): sql_sqlite3.o libsiod.$(SO)
 plplot.$(SO): siod_plplot.o  libsiod.$(SO)
 	$(LD) -o plplot.$(SO) $(LD_LIB_FLAGS) siod_plplot.o libsiod.$(SO) \
 	      -lplplot $(LD_LIB_LIBS)
+
+SYMENGINE_CFLAGS="-I/usr/local/lib"
+
+siod_symengine.o: siod_symengine.c siod.h
+	$(CC) $(CFLAGS) $(SYMENGINE_CFLAGS) -c siod_symengine.c
+
+symengine.o: symengine.c siod.h
+	$(CC) $(CFLAGS) -c symengine.c
+
+symengine.$(SO): siod_symengine.o symengine.o  libsiod.$(SO)
+	$(LD) -o symengine.$(SO) $(LD_LIB_FLAGS) siod_symengine.o symengine.o libsiod.$(SO) \
+	      -lsymengine -lstdc++ -lgmp $(LD_LIB_LIBS)
 
 siod_json.o: siod_json.c siod_json.h siod.h
 	 $(CC) $(CFLAGS) $(JSON_CFLAGS) -c siod_json.c
