@@ -21,6 +21,11 @@ The goal is a proper mathematical computing environment where you can:
 
 
 ## What's Been Done
+**Symengine support**:
+	- added initial support for Symengine 
+	- presently only works with floats, but this will be extended
+	- requires symengine and libgmp to build
+
 **Cleanup of legacy cruft**:
 	- removed support for ancient databases
 	- cleanup of legacy build targets in makefile
