@@ -22,6 +22,13 @@ The goal is a proper mathematical computing environment where you can:
 
 
 ## What's Been Done
+**Quaternion support**:
+	- quaternions are now integrated as first class citizens into
+	  the siod core.
+	- graceful handling of expressions that include floats, complex 
+	  numbers and quaternions
+	- requires CQRlib (https://sourceforge.net/projects/cqrlib/)
+
 **Symengine support**:
 	- added initial support for Symengine 
 	- presently only works with floats, but this will be extended
