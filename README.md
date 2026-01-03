@@ -15,6 +15,7 @@ Let's be honest: This is about bringing old tech back to life so you can do _bad
 The goal is a proper mathematical computing environment where you can:
 - Explore baroque number systems (ℂ → ℍ → 𝕆)
 - Run mathematical simulations without low-level nonsense
+- Symbolic mathematics
 - Actually use advanced programming concepts from "back then" (like concurrency in Lisp)
 - Reclaim missed opportunities from the 1990s
 - Make things work the way they *should* have
@@ -70,13 +71,12 @@ The goal is a proper mathematical computing environment where you can:
 	- updating of all of the documentation for the sysem
 	- replacing the siod.html with a markdown version
 	- quarternions _useful_, octonions _not useful, but fun_
-	- symbolic maths using symengine
 
 ## Building
 
 ```bash
 # Install dependencies (Ubuntu/Debian)
-sudo apt install libgd-dev libsqlite3-dev p
+sudo apt install libgd-dev libsqlite3-dev li
 
 # Build
 make linux
@@ -137,11 +137,12 @@ Original SIOD by George Carrette: https://people.delphiforums.com/gjc//siod.html
 Got ideas for Scáthifying this further? Pull requests welcome.
 
 Especially interested in:
-- SDL2/RayLib bindings
+- RayLib bindings
 - Quaternion/Octonion implementations
-- SymEngine integration
 - Mathematical simulation examples
 - Making it weirder
+- Improving documentation
+- cleaning up the build directory
 
 ## Credits
 

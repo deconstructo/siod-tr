@@ -22,7 +22,7 @@
 #       on some platforms.
 #
 # 
-IROOT=/home/yvain/.local
+IROOT=/usr/local
 MANSEC=1
 MANDIR=$(IROOT)/man/man$(MANSEC)
 BINDIR=$(IROOT)/bin
@@ -117,8 +117,8 @@ linux:
 	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 -D__USE_MISC -D__USE_GNU -D__USE_SVID -D__USE_XOPEN_EXTENDED -D__USE_XOPEN $(SLD) $(READLINE_CFLAGS)" \
 	LD_EXE_FLAGS="-rdynamic -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
 	LD_EXE_LIBS="-ldl" \
-	LD_LIB_FLAGS="-shared" \
-	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread $(JSON_LDFLAGS) $(READLINE_LDFLAGS)" \
+	LD_LIB_FLAGS="-shared -L/usr/local/lib" \
+	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread  -lCQRlib  $(JSON_LDFLAGS) $(READLINE_LDFLAGS)" \
 	SO="so" \
         build_driver
 
@@ -132,10 +132,10 @@ darwin:
 	CC="clang" \
 	LD="clang" \
 	CFLAGS="$(GCCW) $(CDEBUG) -Ddarwin -fPIC -O2 $(SLD)" \
-	LD_EXE_FLAGS="-Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
+	LD_EXE_FLAGS=" -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
 	LD_EXE_LIBS="" \
-	LD_LIB_FLAGS="-dynamiclib" \
-	LD_LIB_LIBS="-lm -lsqlite3 -lpthread " \
+	LD_LIB_FLAGS="-dynamiclib -L/usr/local/lib" \
+	LD_LIB_LIBS="-lm -lsqlite3 -lpthread -lCQRlib" \
 	SO="dylib" \
         build_driver
 
@@ -162,7 +162,7 @@ ssiod: siod.o $(SIOD_OBJS_COMMON)
                        $(SIOD_OBJS_COMMON) $(LD_EXE_LIBS)
 
 siod: siod.o libsiod.$(SO) 
-	$(CC) -o siod $(LD_EXE_FLAGS) siod.o libsiod.$(SO) $(LD_EXE_LIBS)
+	$(CC) -o siod $(LD_EXE_FLAGS) siod.o libsiod.$(SO) $(LD_EXE_LIBS) -lCQRlib
 
 sample: $(SAMPLE_OBJS)
 	$(CC) -o sample $(LD_EXE_FLAGS) $(SAMPLE_OBJS) $(LD_EXE_LIBS)
@@ -218,17 +218,15 @@ plplot.$(SO): siod_plplot.o  libsiod.$(SO)
 	$(LD) -o plplot.$(SO) $(LD_LIB_FLAGS) siod_plplot.o libsiod.$(SO) \
 	      -lplplot $(LD_LIB_LIBS)
 
-SYMENGINE_CFLAGS="-I/usr/local/lib"
-
-siod_symengine.o: siod_symengine.c siod.h
-	$(CC) $(CFLAGS) $(SYMENGINE_CFLAGS) -c siod_symengine.c
+SYMENGINE_CFLAGS := -I/usr/local/include
+SYMENGINE_LIBS := -lsymengine -lstdc++ -lgmp
 
 symengine.o: symengine.c siod.h
 	$(CC) $(CFLAGS) -c symengine.c
 
-symengine.$(SO): siod_symengine.o symengine.o  libsiod.$(SO)
-	$(LD) -o symengine.$(SO) $(LD_LIB_FLAGS) siod_symengine.o symengine.o libsiod.$(SO) \
-	      -lsymengine -lstdc++ -lgmp $(LD_LIB_LIBS)
+symengine.$(SO):  symengine.o  libsiod.$(SO)
+	$(LD) -o symengine.$(SO) $(LD_LIB_FLAGS) symengine.o libsiod.$(SO) \
+	      $(SYMENGINE_LIBS) $(LD_LIB_LIBS)
 
 siod_json.o: siod_json.c siod_json.h siod.h
 	 $(CC) $(CFLAGS) $(JSON_CFLAGS) -c siod_json.c

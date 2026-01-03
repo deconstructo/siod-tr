@@ -20,6 +20,8 @@ This document shows the **recommended API** for using SymEngine from SIOD-TR, de
 ```scheme
 ; Load module
 (require-so "symengine.so")
+(load "symengine-utils.scm")
+
 
 ; Create symbolic expression
 (define expr '(+ (* x x) (* 2 x) 1))

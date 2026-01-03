@@ -13,6 +13,7 @@
  */
 
 #include <complex.h>
+#include <cqrlib.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -26,6 +27,7 @@ struct obj
 		struct obj * cdr;} cons;
 	struct {double data;} flonum;
 	struct {double complex data;} cmpnum;
+	struct {CQRQuaternion data; } quatnum;
 	struct {char *pname;
 		struct obj * vcell;} symbol;
 	struct {char *name;
@@ -102,6 +104,13 @@ struct obj
 #define FLONM(x) ((*x).storage_as.flonum.data)
 #define CPTR(x)   ((*x).storage_as.c_ptr.pv)
 #define CMPNUM(x) ((x)->storage_as.cmpnum.data)
+#define QUATPTR(_obj) (&((_obj)->storage_as.quatnum.data))  /* Returns CQRQuaternionHandle */
+
+/* Component access (for convenience) */
+#define QUATW(_obj) ((_obj)->storage_as.quatnum.data.w)
+#define QUATX(_obj) ((_obj)->storage_as.quatnum.data.x)
+#define QUATY(_obj) ((_obj)->storage_as.quatnum.data.y)
+#define QUATZ(_obj) ((_obj)->storage_as.quatnum.data.z)
 
 #define NIL ((struct obj *) 0)
 #define EQ(x,y) ((x) == (y))
@@ -143,6 +152,7 @@ struct obj
 #define tc_subr_8	26
 
 #define tc_complex	30
+#define tc_quaternion	31
 
 #define FO_comment 35
 
@@ -171,14 +181,15 @@ typedef LISP (*SUBR_FUNC)(void);
 
 
 /* Complex number macros */
-//#define COMPLEXP(x) (TYPE(x) == tc_complex)
 #define COMPLEXP(x) TYPEP(x,tc_complex)
 #define NCOMPLEXP(x) NTYPEP(x,tc_complex)
+/*
 #define COMPLEXREAL(x) (((complex_cell *)(x))->real)
 #define COMPLEXIMAG(x) (((complex_cell *)(x))->imag)
+*/
 
-#define QUARTONIONP(x) TYPEP(x,tc_quartonion)
-#define NQUARTONIONP(x) NTYPEP(x,tc_quartonion)
+#define QUATERNIONP(_obj) TYPEP(_obj,tc_quaternion)
+#define NQUATERNIONP(_obj) NTYPEP(_obj,tc_quaternion)
 
 #define TKBUFFERN 5120
 
