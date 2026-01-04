@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <complex.h>  /* For creal(), cimag() */
 
 /* ================================================================
  * QUATERNION GUARDS - Prevent quaternions from entering SymEngine
@@ -84,13 +85,15 @@ static void guard_symengine_args(const char *fname, LISP expr) {
  * Type Checking
  * ================================================================ */
 
-/* Check if LISP object is a number - SIOD only has floats (and complex) */
+/* Check if LISP object is a number that SymEngine can handle */
 static int is_number(LISP x) {
-    return TYPEP(x, tc_flonum);
-    /* TODO Phase 2: Add tc_c_complex_1 support for complex numbers
-     * This will enable symbolic manipulation of complex expressions
-     * using SIOD's native complex number type (a+bi format)
+    /* SymEngine supports:
+     * - Real numbers (floats)
+     * - Complex numbers (a+bi)
+     * 
+     * Quaternions are guarded out before this function is called.
      */
+    return FLONUMP(x) || COMPLEXP(x);
 }
 
 /* ================================================================
@@ -102,15 +105,51 @@ static void lisp2basic(basic_struct *result, LISP expr);
 
 /* Convert LISP number to SymEngine basic */
 static void lisp_number_to_basic(basic_struct *result, LISP n) {
-    double val = FLONM(n);
-    
-    /* Check if it's actually an integer value for cleaner symbolic output */
-    if (val == (long)val && val >= LONG_MIN && val <= LONG_MAX) {
-        /* Store as integer: 2.0 -> "2" instead of "2.0" */
-        integer_set_si(result, (long)val);
-    } else {
-        /* Store as real double */
-        real_double_set_d(result, val);
+    if (FLONUMP(n)) {
+        /* Real number */
+        double val = FLONM(n);
+        
+        /* Check if it's actually an integer value for cleaner symbolic output */
+        if (val == (long)val && val >= LONG_MIN && val <= LONG_MAX) {
+            /* Store as integer: 2.0 -> "2" instead of "2.0" */
+            integer_set_si(result, (long)val);
+        } else {
+            /* Store as real double */
+            real_double_set_d(result, val);
+        }
+    }
+    else if (COMPLEXP(n)) {
+        /* Complex number: a + bi
+         * Extract real and imaginary parts, then construct a + b*I */
+        double complex z = CMPNUM(n);
+        double real_part = creal(z);
+        double imag_part = cimag(z);
+        
+        /* Create SymEngine basics for real and imaginary parts */
+        basic real_s, imag_s, I_s, imag_term_s;
+        basic_new_stack(real_s);
+        basic_new_stack(imag_s);
+        basic_new_stack(I_s);
+        basic_new_stack(imag_term_s);
+        
+        /* Real part */
+        real_double_set_d(real_s, real_part);
+        
+        /* Imaginary part: b*I */
+        real_double_set_d(imag_s, imag_part);
+        basic_const_I(I_s);  /* Imaginary unit */
+        basic_mul(imag_term_s, imag_s, I_s);
+        
+        /* Result: a + b*I */
+        basic_add(result, real_s, imag_term_s);
+        
+        basic_free_stack(real_s);
+        basic_free_stack(imag_s);
+        basic_free_stack(I_s);
+        basic_free_stack(imag_term_s);
+    }
+    else {
+        err("expected float or complex number", n);
     }
 }
 
@@ -235,6 +274,12 @@ static void lisp2basic(basic_struct *result, LISP expr) {
     else if (CONSP(expr)) {
         lisp_list_to_basic(result, expr);
     }
+    else if (TYPEP(expr, tc_string)) {
+        /* Parse string as SymEngine expression
+         * This allows chaining: sym-subs returns string, sym-evalf accepts it */
+        char *str = get_c_string(expr);
+        basic_parse(result, str);
+    }
     else {
         err("cannot convert to symbolic expression", expr);
     }
@@ -244,9 +289,35 @@ static void lisp2basic(basic_struct *result, LISP expr) {
  * SymEngine to S-Expression Conversion
  * ================================================================ */
 
-/* Convert SymEngine basic to LISP string (for now) */
+/* Convert SymEngine basic to LISP string (always returns string) */
 static LISP basic2lisp_string(basic_struct *b) {
     char *str = basic_str(b);
+    LISP result = strcons(strlen(str), str);
+    basic_str_free(str);
+    return result;
+}
+
+/* Convert SymEngine basic to LISP value (smart conversion)
+ * Returns:
+ *  - LISP float if result is a real number
+ *  - LISP string if result is symbolic or complex */
+static LISP basic2lisp(basic_struct *b) {
+    char *str = basic_str(b);
+    
+    /* Try to parse as a simple number */
+    char *endptr;
+    double val = strtod(str, &endptr);
+    
+    /* If entire string was parsed as a number (no leftover chars except whitespace) */
+    while (*endptr == ' ') endptr++;  /* Skip trailing spaces */
+    
+    if (*endptr == '\0') {
+        /* It's a pure number - return as LISP float */
+        basic_str_free(str);
+        return flocons(val);
+    }
+    
+    /* Still symbolic or complex - return as string */
     LISP result = strcons(strlen(str), str);
     basic_str_free(str);
     return result;
@@ -286,7 +357,7 @@ LISP siod_sym_diff(LISP expr, LISP var) {
     lisp2basic(v, var);
     basic_diff(result, e, v);
     
-    LISP lisp_result = basic2lisp_string(result);
+    LISP lisp_result = basic2lisp(result);  /* Smart: returns number if possible */
     
     basic_free_stack(e);
     basic_free_stack(v);
@@ -309,7 +380,7 @@ LISP siod_sym_add(LISP expr1, LISP expr2) {
     lisp2basic(e2, expr2);
     basic_add(result, e1, e2);
     
-    LISP lisp_result = basic2lisp_string(result);
+    LISP lisp_result = basic2lisp(result);  /* Smart: returns number if possible */
     
     basic_free_stack(e1);
     basic_free_stack(e2);
@@ -332,7 +403,7 @@ LISP siod_sym_sub(LISP expr1, LISP expr2) {
     lisp2basic(e2, expr2);
     basic_sub(result, e1, e2);
     
-    LISP lisp_result = basic2lisp_string(result);
+    LISP lisp_result = basic2lisp(result);  /* Smart: returns number if possible */
     
     basic_free_stack(e1);
     basic_free_stack(e2);
@@ -355,7 +426,7 @@ LISP siod_sym_mul(LISP expr1, LISP expr2) {
     lisp2basic(e2, expr2);
     basic_mul(result, e1, e2);
     
-    LISP lisp_result = basic2lisp_string(result);
+    LISP lisp_result = basic2lisp(result);  /* Smart: returns number if possible */
     
     basic_free_stack(e1);
     basic_free_stack(e2);
@@ -378,7 +449,7 @@ LISP siod_sym_div(LISP expr1, LISP expr2) {
     lisp2basic(e2, expr2);
     basic_div(result, e1, e2);
     
-    LISP lisp_result = basic2lisp_string(result);
+    LISP lisp_result = basic2lisp(result);  /* Smart: returns number if possible */
     
     basic_free_stack(e1);
     basic_free_stack(e2);
@@ -401,7 +472,7 @@ LISP siod_sym_pow(LISP expr, LISP power) {
     lisp2basic(p, power);
     basic_pow(result, e, p);
     
-    LISP lisp_result = basic2lisp_string(result);
+    LISP lisp_result = basic2lisp(result);  /* Smart: returns number if possible */
     
     basic_free_stack(e);
     basic_free_stack(p);
@@ -435,12 +506,142 @@ LISP siod_sym_expand(LISP expr) {
     lisp2basic(e, expr);
     basic_expand(result, e);
     
-    LISP lisp_result = basic2lisp_string(result);
+    LISP lisp_result = basic2lisp(result);  /* Smart: returns number if possible */
     
     basic_free_stack(e);
     basic_free_stack(result);
     
     return lisp_result;
+}
+
+/* (sym-simplify expr) - Simplify symbolic expression */
+LISP siod_sym_simplify(LISP expr) {
+    guard_symengine_args("sym-simplify", expr);
+    
+    basic e, result;
+    basic_new_stack(e);
+    basic_new_stack(result);
+    
+    lisp2basic(e, expr);
+    
+    /* SymEngine doesn't have basic_simplify, but has basic_expand
+     * For now, use expand which often simplifies */
+    basic_expand(result, e);
+    
+    LISP lisp_result = basic2lisp(result);
+    
+    basic_free_stack(e);
+    basic_free_stack(result);
+    
+    return lisp_result;
+}
+
+/* (sym-subs expr bindings) - Substitute variables with values
+ * bindings is an association list: '((x . 5) (y . 3))
+ * Returns a new symbolic expression with substitutions applied */
+LISP siod_sym_subs(LISP expr, LISP bindings) {
+    guard_symengine_args("sym-subs", expr);
+    guard_symengine_args("sym-subs", bindings);
+    
+    basic e, result;
+    basic_new_stack(e);
+    basic_new_stack(result);
+    
+    lisp2basic(e, expr);
+    
+    /* Process each binding in the association list */
+    LISP current = bindings;
+    basic temp;
+    basic_new_stack(temp);
+    
+    /* Start with original expression */
+    basic_assign(result, e);
+    
+    while (CONSP(current)) {
+        LISP binding = car(current);
+        
+        if (!CONSP(binding)) {
+            basic_free_stack(e);
+            basic_free_stack(result);
+            basic_free_stack(temp);
+            err("binding must be a pair (var . value)", binding);
+        }
+        
+        LISP var = car(binding);
+        LISP val = cdr(binding);
+        
+        if (!SYMBOLP(var)) {
+            basic_free_stack(e);
+            basic_free_stack(result);
+            basic_free_stack(temp);
+            err("variable must be a symbol", var);
+        }
+        
+        /* Create SymEngine symbol for variable */
+        basic var_s, val_s;
+        basic_new_stack(var_s);
+        basic_new_stack(val_s);
+        
+        lisp2basic(var_s, var);
+        lisp2basic(val_s, val);
+        
+        /* Substitute: result = result.subs(var_s, val_s) */
+        basic_subs2(temp, result, var_s, val_s);
+        basic_assign(result, temp);
+        
+        basic_free_stack(var_s);
+        basic_free_stack(val_s);
+        
+        current = cdr(current);
+    }
+    
+    basic_free_stack(temp);
+    
+    /* Convert result: returns number if fully evaluated, string if symbolic */
+    LISP lisp_result = basic2lisp(result);
+    
+    basic_free_stack(e);
+    basic_free_stack(result);
+    
+    return lisp_result;
+}
+
+/* (sym-evalf expr) - Evaluate symbolic expression to float
+ * Returns a LISP float (or string if result is complex)
+ * Uses double precision (53 bits ~ 15-16 decimal digits) */
+LISP siod_sym_evalf(LISP expr) {
+    guard_symengine_args("sym-evalf", expr);
+    
+    basic e, result;
+    basic_new_stack(e);
+    basic_new_stack(result);
+    
+    lisp2basic(e, expr);
+    
+    /* Evaluate to floating point with double precision */
+    basic_evalf(result, e, 53, 1);  /* 53 bits, use real arithmetic */
+    
+    /* Convert result back to LISP
+     * Try to extract as double if it's a real number */
+    char *str = basic_str(result);
+    
+    /* Check if result contains 'I' (imaginary unit) */
+    if (strchr(str, 'I') != NULL) {
+        /* Result is complex - return as string for now
+         * TODO: Parse and return as LISP complex number */
+        LISP lisp_result = strcons(strlen(str), str);
+        basic_str_free(str);
+        basic_free_stack(e);
+        basic_free_stack(result);
+        return lisp_result;
+    } else {
+        /* Real number - parse as double */
+        double val = atof(str);
+        basic_str_free(str);
+        basic_free_stack(e);
+        basic_free_stack(result);
+        return flocons(val);
+    }
 }
 
 /* ================================================================
@@ -464,6 +665,11 @@ void init_subr_symengine(void) {
     
     /* Algebraic manipulation */
     init_subr_1("sym-expand", siod_sym_expand);
+    init_subr_1("sym-simplify", siod_sym_simplify);
+    
+    /* Evaluation */
+    init_subr_2("sym-subs", siod_sym_subs);
+    init_subr_1("sym-evalf", siod_sym_evalf);
 }
 
 /* ================================================================
