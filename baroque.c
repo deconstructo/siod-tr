@@ -204,6 +204,11 @@ static LISP lquaternionp(LISP x) {
     return QUATERNIONP(x) ? cintern("t") : NIL;
 }
 
+/* (number? x) - Is x any kind of number (float, complex, quaternion)? */
+static LISP lnumberp_baroque(LISP x) {
+    return (FLONUMP(x) || COMPLEXP(x) || QUATERNIONP(x)) ? cintern("t") : NIL;
+}
+
 /* ============================================
    PRINTING
    ============================================ */
@@ -1224,6 +1229,7 @@ void init_baroque(void) {
     init_subr_1("quat-z", lquat_z);
     
     init_subr_1("quaternion?", lquaternionp);
+    init_subr_1("number?", lnumberp_baroque);  /* Polymorphic: float, complex, or quaternion */
     
     init_subr_1("quat-normalize", lquat_normalize);
     init_subr_1("quat-inverse", lquat_inverse);

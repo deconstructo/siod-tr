@@ -16,12 +16,63 @@
  */
 
 #include <stdio.h>
-#include <stddef.h>
 #include "siod.h"
 #include <symengine/cwrapper.h>
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+
+/* ================================================================
+ * QUATERNION GUARDS - Prevent quaternions from entering SymEngine
+ * ================================================================ */
+
+/* Recursively check if expression contains quaternions */
+static int contains_quaternion(LISP expr) {
+    if (NULLP(expr)) {
+        return 0;
+    }
+    
+    /* Check if this node is a quaternion */
+    if (QUATERNIONP(expr)) {
+        return 1;
+    }
+    
+    /* Recursively check cons cells */
+    if (CONSP(expr)) {
+        return contains_quaternion(car(expr)) || 
+               contains_quaternion(cdr(expr));
+    }
+    
+    /* Not a quaternion */
+    return 0;
+}
+
+/* Check for any unsupported type (quaternions, octonions in future) */
+static int contains_unsupported_type(LISP expr) {
+    return contains_quaternion(expr);
+    /* Future: || contains_octonion(expr) */
+}
+
+/* Display helpful error message and throw error */
+static void symengine_type_error(const char *operation, LISP expr) {
+    fputs("\nSymEngine Error: Expression contains quaternions.\n", stderr);
+    fputs("Quaternions cannot be used in symbolic operations.\n\n", stderr);
+    fputs("Use numeric evaluation instead:\n", stderr);
+    fprintf(stderr, "  Instead of: (%s ...)\n", operation);
+    fputs("  Use:        Direct numeric operations like (+, -, *, /)\n\n", stderr);
+    fputs("Example:\n", stderr);
+    fputs("  Don't:  (sym '(+ q1 q2))      ; Symbolic - won't work\n", stderr);
+    fputs("  Do:     (+ q1 q2)              ; Numeric - works!\n\n", stderr);
+    
+    err("quaternions not supported in SymEngine", expr);
+}
+
+/* Guard wrapper - call this at the start of each SymEngine function */
+static void guard_symengine_args(const char *fname, LISP expr) {
+    if (contains_unsupported_type(expr)) {
+        symengine_type_error(fname, expr);
+    }
+}
 
 /* ================================================================
  * Memory Management Helpers
@@ -207,6 +258,8 @@ static LISP basic2lisp_string(basic_struct *b) {
 
 /* (sym expr) - Create symbolic expression from S-expression */
 LISP siod_sym(LISP expr) {
+    guard_symengine_args("sym", expr);
+    
     basic b;
     basic_new_stack(b);
     lisp2basic(b, expr);
@@ -217,6 +270,9 @@ LISP siod_sym(LISP expr) {
 
 /* (sym-diff expr var) - Differentiate expression with respect to variable */
 LISP siod_sym_diff(LISP expr, LISP var) {
+    guard_symengine_args("sym-diff", expr);
+    guard_symengine_args("sym-diff", var);
+    
     if (!SYMBOLP(var)) {
         err("differentiation variable must be a symbol", var);
     }
@@ -241,6 +297,9 @@ LISP siod_sym_diff(LISP expr, LISP var) {
 
 /* (sym+ expr1 expr2) - Add two symbolic expressions */
 LISP siod_sym_add(LISP expr1, LISP expr2) {
+    guard_symengine_args("sym+", expr1);
+    guard_symengine_args("sym+", expr2);
+    
     basic e1, e2, result;
     basic_new_stack(e1);
     basic_new_stack(e2);
@@ -261,6 +320,9 @@ LISP siod_sym_add(LISP expr1, LISP expr2) {
 
 /* (sym- expr1 expr2) - Subtract symbolic expressions */
 LISP siod_sym_sub(LISP expr1, LISP expr2) {
+    guard_symengine_args("sym-", expr1);
+    guard_symengine_args("sym-", expr2);
+    
     basic e1, e2, result;
     basic_new_stack(e1);
     basic_new_stack(e2);
@@ -281,6 +343,9 @@ LISP siod_sym_sub(LISP expr1, LISP expr2) {
 
 /* (sym* expr1 expr2) - Multiply symbolic expressions */
 LISP siod_sym_mul(LISP expr1, LISP expr2) {
+    guard_symengine_args("sym*", expr1);
+    guard_symengine_args("sym*", expr2);
+    
     basic e1, e2, result;
     basic_new_stack(e1);
     basic_new_stack(e2);
@@ -301,6 +366,9 @@ LISP siod_sym_mul(LISP expr1, LISP expr2) {
 
 /* (sym/ expr1 expr2) - Divide symbolic expressions */
 LISP siod_sym_div(LISP expr1, LISP expr2) {
+    guard_symengine_args("sym/", expr1);
+    guard_symengine_args("sym/", expr2);
+    
     basic e1, e2, result;
     basic_new_stack(e1);
     basic_new_stack(e2);
@@ -321,6 +389,9 @@ LISP siod_sym_div(LISP expr1, LISP expr2) {
 
 /* (sym-pow expr power) - Raise expression to power */
 LISP siod_sym_pow(LISP expr, LISP power) {
+    guard_symengine_args("sym-pow", expr);
+    guard_symengine_args("sym-pow", power);
+    
     basic e, p, result;
     basic_new_stack(e);
     basic_new_stack(p);
@@ -341,6 +412,8 @@ LISP siod_sym_pow(LISP expr, LISP power) {
 
 /* (sym->string expr) - Convert symbolic expression to string */
 LISP siod_sym_to_string(LISP expr) {
+    guard_symengine_args("sym->string", expr);
+    
     basic b;
     basic_new_stack(b);
     lisp2basic(b, expr);
@@ -353,6 +426,8 @@ LISP siod_sym_to_string(LISP expr) {
 
 /* (sym-expand expr) - Expand symbolic expression */
 LISP siod_sym_expand(LISP expr) {
+    guard_symengine_args("sym-expand", expr);
+    
     basic e, result;
     basic_new_stack(e);
     basic_new_stack(result);
