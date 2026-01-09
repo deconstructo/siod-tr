@@ -118,7 +118,7 @@ linux:
 	LD_EXE_FLAGS="-rdynamic -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
 	LD_EXE_LIBS="-ldl" \
 	LD_LIB_FLAGS="-shared -L/usr/local/lib" \
-	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread  -lCQRlib  $(JSON_LDFLAGS) $(READLINE_LDFLAGS)" \
+	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread  -lCQRlib -loct  $(JSON_LDFLAGS) $(READLINE_LDFLAGS)" \
 	SO="so" \
         build_driver
 
@@ -135,7 +135,7 @@ darwin:
 	LD_EXE_FLAGS=" -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
 	LD_EXE_LIBS="" \
 	LD_LIB_FLAGS="-dynamiclib -L/usr/local/lib" \
-	LD_LIB_LIBS="-lm -lsqlite3 -lpthread -lCQRlib" \
+	LD_LIB_LIBS="-lm -lsqlite3 -lpthread -lCQRlib -loct" \
 	SO="dylib" \
         build_driver
 
@@ -162,7 +162,7 @@ ssiod: siod.o $(SIOD_OBJS_COMMON)
                        $(SIOD_OBJS_COMMON) $(LD_EXE_LIBS)
 
 siod: siod.o libsiod.$(SO) 
-	$(CC) -o siod $(LD_EXE_FLAGS) siod.o libsiod.$(SO) $(LD_EXE_LIBS) -lCQRlib
+	$(CC) -o siod $(LD_EXE_FLAGS) siod.o libsiod.$(SO) $(LD_EXE_LIBS) -lCQRlib -loct
 
 sample: $(SAMPLE_OBJS)
 	$(CC) -o sample $(LD_EXE_FLAGS) $(SAMPLE_OBJS) $(LD_EXE_LIBS)

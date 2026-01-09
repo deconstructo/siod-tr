@@ -31,7 +31,8 @@
 #include <complex.h>
 #include <math.h>
 #include <string.h>
-#include <cqrlib.h>
+#include <cqrlib.h> 	// Quaternions
+#include <octonion.h>	// Octonions
 
 /* ============================================
    COMPLEX NUMBERS - PHASE 1: CONSTRUCTORS
@@ -108,7 +109,30 @@ static LISP lquat_from_axis_angle(LISP axis, LISP angle) {
 }
 
 /* ============================================
-   COMPLEX - PHASE 1: ACCESSORS
+   OCTONIONS - CONSTRUCTORS
+   ============================================ */
+
+/* Create octonion - uses SIOD's cell allocation */
+LISP make_octonion(double e0, double e1, double e2, double e3,
+                   double e4, double e5, double e6, double e7) {
+    LISP o = newcell(tc_octonion);
+    octonion *optr = OCTPTR(o);
+    *optr = oct_make(e0, e1, e2, e3, e4, e5, e6, e7);
+    return o;
+}
+
+/* (make-octonion e0 e1 e2 e3 e4 e5 e6 e7) or (oct e0 e1 e2 e3 e4 e5 e6 e7) */
+static LISP lmake_octonion(LISP e0, LISP e1, LISP e2, LISP e3,
+                           LISP e4, LISP e5, LISP e6, LISP e7) {
+    return make_octonion(get_c_double(e0), get_c_double(e1),
+                        get_c_double(e2), get_c_double(e3),
+                        get_c_double(e4), get_c_double(e5),
+                        get_c_double(e6), get_c_double(e7));
+}
+
+
+/* ============================================
+   COMPLEX - ACCESSORS
    ============================================ */
 
 /* (real-part z) - Extract real component */
@@ -167,7 +191,7 @@ static LISP langle(LISP z) {
 }
 
 /* ============================================
-   QUATERNIONS - PHASE 3: ACCESSORS
+   QUATERNIONS - ACCESSORS
    ============================================ */
 
 static LISP lquat_w(LISP q) {
@@ -191,6 +215,51 @@ static LISP lquat_z(LISP q) {
 }
 
 /* ============================================
+   OCTONIONS - ACCESSORS
+   ============================================ */
+
+static LISP loct_real(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    return flocons(OCTPTR(o)->e[0]);
+}
+
+static LISP loct_e1(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    return flocons(OCTPTR(o)->e[1]);
+}
+
+static LISP loct_e2(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    return flocons(OCTPTR(o)->e[2]);
+}
+
+static LISP loct_e3(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    return flocons(OCTPTR(o)->e[3]);
+}
+
+static LISP loct_e4(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    return flocons(OCTPTR(o)->e[4]);
+}
+
+static LISP loct_e5(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    return flocons(OCTPTR(o)->e[5]);
+}
+
+static LISP loct_e6(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    return flocons(OCTPTR(o)->e[6]);
+}
+
+static LISP loct_e7(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    return flocons(OCTPTR(o)->e[7]);
+}
+
+
+/* ============================================
    PREDICATES
    ============================================ */
 
@@ -204,9 +273,15 @@ static LISP lquaternionp(LISP x) {
     return QUATERNIONP(x) ? cintern("t") : NIL;
 }
 
-/* (number? x) - Is x any kind of number (float, complex, quaternion)? */
+/* (octonion? x) - Is x an octonion? */
+static LISP loctonionp(LISP x) {
+    return OCTONIONP(x) ? cintern("t") : NIL;
+}
+
+/* (number? x) - Is x any kind of number (float, complex, quaternion, octonion)? */
 static LISP lnumberp_baroque(LISP x) {
-    return (FLONUMP(x) || COMPLEXP(x) || QUATERNIONP(x)) ? cintern("t") : NIL;
+    return (FLONUMP(x) || COMPLEXP(x) || QUATERNIONP(x) ||
+		    OCTONIONP(x)) ? cintern("t") : NIL;
 }
 
 /* ============================================
@@ -218,7 +293,7 @@ static void complex_prin1(LISP ptr, struct gen_printio *f) {
     double complex c = CMPNUM(ptr);
     char buf[128];
     
-    snprintf(buf, sizeof(buf), "#C(%g %g)", creal(c), cimag(c));
+    snprintf(buf, sizeof(buf), "#ℂ(%g %g)", creal(c), cimag(c));
     gput_st(f, buf);
 }
 
@@ -226,8 +301,19 @@ static void complex_prin1(LISP ptr, struct gen_printio *f) {
 static void quaternion_prin1(LISP ptr, struct gen_printio *f) {
     char buf[256];
     
-    snprintf(buf, sizeof(buf), "#Q(%g %g %g %g)", 
+    snprintf(buf, sizeof(buf), "#ℍ(%g %g %g %g)", 
              QUATW(ptr), QUATX(ptr), QUATY(ptr), QUATZ(ptr));
+    gput_st(f, buf);
+}
+
+/* Print octonion as #O(e0 e1 e2 e3 e4 e5 e6 e7) */
+static void octonion_prin1(LISP ptr, struct gen_printio *f) {
+    char buf[512];
+    octonion *o = OCTPTR(ptr);
+    
+    snprintf(buf, sizeof(buf), "#𝕆(%g %g %g %g %g %g %g %g)", 
+             o->e[0], o->e[1], o->e[2], o->e[3],
+             o->e[4], o->e[5], o->e[6], o->e[7]);
     gput_st(f, buf);
 }
 
@@ -1199,6 +1285,108 @@ static LISP lquat_slerp(LISP q1, LISP q2, LISP t) {
 }
 
 /* ============================================
+   OCTONIONS - ARITHMETIC
+   ============================================ */
+
+/* Add two octonions */
+static LISP oct_add_lisp(LISP o1, LISP o2) {
+    if (!OCTONIONP(o1)) err("not an octonion", o1);
+    if (!OCTONIONP(o2)) err("not an octonion", o2);
+    
+    octonion result = oct_add(*OCTPTR(o1), *OCTPTR(o2));
+    
+    return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
+                        result.e[4], result.e[5], result.e[6], result.e[7]);
+}
+
+/* Subtract two octonions */
+static LISP oct_sub_lisp(LISP o1, LISP o2) {
+    if (!OCTONIONP(o1)) err("not an octonion", o1);
+    if (!OCTONIONP(o2)) err("not an octonion", o2);
+    
+    octonion result = oct_sub(*OCTPTR(o1), *OCTPTR(o2));
+    
+    return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
+                        result.e[4], result.e[5], result.e[6], result.e[7]);
+}
+
+/* Multiply two octonions (non-associative!) */
+static LISP oct_multiply_lisp(LISP o1, LISP o2) {
+    if (!OCTONIONP(o1)) err("not an octonion", o1);
+    if (!OCTONIONP(o2)) err("not an octonion", o2);
+    
+    octonion result = oct_multiply(*OCTPTR(o1), *OCTPTR(o2));
+    
+    return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
+                        result.e[4], result.e[5], result.e[6], result.e[7]);
+}
+
+/* Conjugate an octonion */
+static LISP loct_conjugate(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    
+    octonion result = oct_conjugate(*OCTPTR(o));
+    
+    return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
+                        result.e[4], result.e[5], result.e[6], result.e[7]);
+}
+
+/* Norm (magnitude) of an octonion */
+static LISP loct_norm(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    
+    return flocons(oct_norm(*OCTPTR(o)));
+}
+
+/* Norm squared of an octonion */
+static LISP loct_norm_squared(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    
+    return flocons(oct_norm_squared(*OCTPTR(o)));
+}
+
+/* Scale octonion by scalar */
+static LISP loct_scale(LISP o, LISP s) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    
+    double scalar = get_c_double(s);
+    octonion result = oct_scale(*OCTPTR(o), scalar);
+    
+    return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
+                        result.e[4], result.e[5], result.e[6], result.e[7]);
+}
+
+/* Normalize an octonion to unit length */
+static LISP loct_normalize(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    
+    octonion result = oct_normalise(*OCTPTR(o));
+    
+    return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
+                        result.e[4], result.e[5], result.e[6], result.e[7]);
+}
+
+/* Inverse of an octonion */
+static LISP loct_inverse(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    
+    octonion result = oct_inverse(*OCTPTR(o));
+    
+    return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
+                        result.e[4], result.e[5], result.e[6], result.e[7]);
+}
+
+/* Negate an octonion */
+static LISP loct_negate(LISP o) {
+    if (!OCTONIONP(o)) err("not an octonion", o);
+    
+    octonion result = oct_negate(*OCTPTR(o));
+    
+    return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
+                        result.e[4], result.e[5], result.e[6], result.e[7]);
+}
+
+/* ============================================
    INITIALIZATION
    ============================================ */
 
@@ -1206,7 +1394,7 @@ void init_baroque(void) {
     /* Set print hooks */
     set_print_hooks(tc_complex, complex_prin1);
     set_print_hooks(tc_quaternion, quaternion_prin1);
-    
+    set_print_hooks(tc_octonion, octonion_prin1);    
     /* ========== COMPLEX: Basic Functions ========== */
     init_subr_2("make-rectangular", lmake_rectangular);
     init_subr_2("make-polar", lmake_polar);
@@ -1236,6 +1424,34 @@ void init_baroque(void) {
     init_subr_1("quat-to-axis-angle", lquat_to_axis_angle);
     init_subr_2("quat-rotate-vector", lquat_rotate_vector);
     init_subr_3("quat-slerp", lquat_slerp);
+
+    /* ========== OCTONIONS: Basic Functions ========== */
+    init_subr_8("make-octonion", lmake_octonion);
+    init_subr_8("oct", lmake_octonion);  // Shorter alias
+    
+    init_subr_1("oct-real", loct_real);
+    init_subr_1("oct-e1", loct_e1);
+    init_subr_1("oct-e2", loct_e2);
+    init_subr_1("oct-e3", loct_e3);
+    init_subr_1("oct-e4", loct_e4);
+    init_subr_1("oct-e5", loct_e5);
+    init_subr_1("oct-e6", loct_e6);
+    init_subr_1("oct-e7", loct_e7);
+    
+    init_subr_1("octonion?", loctonionp);
+    
+    init_subr_2("oct-add", oct_add_lisp);
+    init_subr_2("oct-sub", oct_sub_lisp);
+    init_subr_2("oct-multiply", oct_multiply_lisp);
+    init_subr_2("oct*", oct_multiply_lisp);  // Shorter alias
+    
+    init_subr_1("oct-conjugate", loct_conjugate);
+    init_subr_1("oct-norm", loct_norm);
+    init_subr_1("oct-norm-squared", loct_norm_squared);
+    init_subr_2("oct-scale", loct_scale);
+    init_subr_1("oct-normalize", loct_normalize);
+    init_subr_1("oct-inverse", loct_inverse);
+    init_subr_1("oct-negate", loct_negate);
     
     /* ========== POLYMORPHIC OPERATORS (work with real/complex/quaternion) ========== */
     

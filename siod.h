@@ -14,6 +14,7 @@
 
 #include <complex.h>
 #include <cqrlib.h>
+#include <octonion.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -28,6 +29,7 @@ struct obj
 	struct {double data;} flonum;
 	struct {double complex data;} cmpnum;
 	struct {CQRQuaternion data; } quatnum;
+	struct {octonion data; } octnum;
 	struct {char *pname;
 		struct obj * vcell;} symbol;
 	struct {char *name;
@@ -105,6 +107,7 @@ struct obj
 #define CPTR(x)   ((*x).storage_as.c_ptr.pv)
 #define CMPNUM(x) ((x)->storage_as.cmpnum.data)
 #define QUATPTR(_obj) (&((_obj)->storage_as.quatnum.data))  /* Returns CQRQuaternionHandle */
+#define OCTPTR(_obj) (&((_obj)->storage_as.octnum.data))  
 
 /* Component access (for convenience) */
 #define QUATW(_obj) ((_obj)->storage_as.quatnum.data.w)
@@ -150,9 +153,11 @@ struct obj
 #define tc_subr_6	24
 #define tc_subr_7	25
 #define tc_subr_8	26
+#define tc_subr_9	27
 
 #define tc_complex	30
 #define tc_quaternion	31
+#define tc_octonion 32
 
 #define FO_comment 35
 
@@ -183,9 +188,14 @@ typedef LISP (*SUBR_FUNC)(void);
 /* Complex number macros */
 #define COMPLEXP(x) TYPEP(x,tc_complex)
 #define NCOMPLEXP(x) NTYPEP(x,tc_complex)
-/* Quaterniob number macros */
+
+/* Quaternion number macros */
 #define QUATERNIONP(_obj) TYPEP(_obj,tc_quaternion)
 #define NQUATERNIONP(_obj) NTYPEP(_obj,tc_quaternion)
+
+/* Octonion number macross */
+#define OCTONIONP(_obj) TYPEP(_obj,tc_octonion)
+#define NOCTONIONP(_obj) NTYPEP(_obj,tc_octonion)
 
 #define TKBUFFERN 5120
 
@@ -282,9 +292,9 @@ void init_subr_2n(char *name, LISP (*fcn)(LISP,LISP));
 void init_subr_3(char *name, LISP (*fcn)(LISP,LISP,LISP));
 void init_subr_4(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP));
 void init_subr_5(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP));
-void init_subr_6(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP,LISP));           /* NEW */
-void init_subr_7(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP,LISP,LISP));      /* NEW */
-void init_subr_8(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP,LISP,LISP,LISP)); /* NEW */
+void init_subr_6(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP,LISP));           	/* NEW */
+void init_subr_7(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP,LISP,LISP));      	/* NEW */
+void init_subr_8(char *name, LISP (*fcn)(LISP,LISP,LISP,LISP,LISP,LISP,LISP,LISP)); 	/* NEW */
 
 void init_lsubr(char *name, LISP (*fcn)(LISP));
 void init_fsubr(char *name, LISP (*fcn)(LISP,LISP));
