@@ -117,7 +117,7 @@ LISP make_octonion(double e0, double e1, double e2, double e3,
                    double e4, double e5, double e6, double e7) {
     LISP o = newcell(tc_octonion);
     octonion *optr = OCTPTR(o);
-    *optr = oct_make(e0, e1, e2, e3, e4, e5, e6, e7);
+    oct_make(optr, e0, e1, e2, e3, e4, e5, e6, e7);
     return o;
 }
 
@@ -1293,7 +1293,8 @@ static LISP oct_add_lisp(LISP o1, LISP o2) {
     if (!OCTONIONP(o1)) err("not an octonion", o1);
     if (!OCTONIONP(o2)) err("not an octonion", o2);
     
-    octonion result = oct_add(*OCTPTR(o1), *OCTPTR(o2));
+    octonion result;
+    oct_add(&result, *OCTPTR(o1), *OCTPTR(o2));
     
     return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
                         result.e[4], result.e[5], result.e[6], result.e[7]);
@@ -1304,7 +1305,8 @@ static LISP oct_sub_lisp(LISP o1, LISP o2) {
     if (!OCTONIONP(o1)) err("not an octonion", o1);
     if (!OCTONIONP(o2)) err("not an octonion", o2);
     
-    octonion result = oct_sub(*OCTPTR(o1), *OCTPTR(o2));
+    octonion result;
+    oct_sub(&result, *OCTPTR(o1), *OCTPTR(o2));
     
     return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
                         result.e[4], result.e[5], result.e[6], result.e[7]);
@@ -1315,7 +1317,8 @@ static LISP oct_multiply_lisp(LISP o1, LISP o2) {
     if (!OCTONIONP(o1)) err("not an octonion", o1);
     if (!OCTONIONP(o2)) err("not an octonion", o2);
     
-    octonion result = oct_multiply(*OCTPTR(o1), *OCTPTR(o2));
+    octonion result;
+    oct_multiply(&result, *OCTPTR(o1), *OCTPTR(o2));
     
     return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
                         result.e[4], result.e[5], result.e[6], result.e[7]);
@@ -1325,7 +1328,8 @@ static LISP oct_multiply_lisp(LISP o1, LISP o2) {
 static LISP loct_conjugate(LISP o) {
     if (!OCTONIONP(o)) err("not an octonion", o);
     
-    octonion result = oct_conjugate(*OCTPTR(o));
+    octonion result;
+    oct_conjugate(&result, *OCTPTR(o));
     
     return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
                         result.e[4], result.e[5], result.e[6], result.e[7]);
@@ -1350,7 +1354,8 @@ static LISP loct_scale(LISP o, LISP s) {
     if (!OCTONIONP(o)) err("not an octonion", o);
     
     double scalar = get_c_double(s);
-    octonion result = oct_scale(*OCTPTR(o), scalar);
+    octonion result;
+    oct_scale(&result, *OCTPTR(o), scalar);
     
     return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
                         result.e[4], result.e[5], result.e[6], result.e[7]);
@@ -1360,7 +1365,8 @@ static LISP loct_scale(LISP o, LISP s) {
 static LISP loct_normalize(LISP o) {
     if (!OCTONIONP(o)) err("not an octonion", o);
     
-    octonion result = oct_normalise(*OCTPTR(o));
+    octonion result;
+    oct_normalise(&result, *OCTPTR(o));
     
     return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
                         result.e[4], result.e[5], result.e[6], result.e[7]);
@@ -1370,7 +1376,8 @@ static LISP loct_normalize(LISP o) {
 static LISP loct_inverse(LISP o) {
     if (!OCTONIONP(o)) err("not an octonion", o);
     
-    octonion result = oct_inverse(*OCTPTR(o));
+    octonion result;
+    oct_inverse(&result, *OCTPTR(o));
     
     return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
                         result.e[4], result.e[5], result.e[6], result.e[7]);
@@ -1380,7 +1387,8 @@ static LISP loct_inverse(LISP o) {
 static LISP loct_negate(LISP o) {
     if (!OCTONIONP(o)) err("not an octonion", o);
     
-    octonion result = oct_negate(*OCTPTR(o));
+    octonion result;
+    oct_negate(&result, *OCTPTR(o));
     
     return make_octonion(result.e[0], result.e[1], result.e[2], result.e[3],
                         result.e[4], result.e[5], result.e[6], result.e[7]);

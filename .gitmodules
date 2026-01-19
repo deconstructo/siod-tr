@@ -1,0 +1,6 @@
+[submodule "LibOctonion"]
+	path = LibOctonion
+	url = https://github.com/deconstructo/LibOctonion
+[submodule "symengine"]
+	path = symengine
+	url = https://github.com/symengine/symengine.git

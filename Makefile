@@ -92,10 +92,34 @@ default:
 CMDFILES = csiod snapshot-dir snapshot-compare http-get cp-build \
            ftp-cp ftp-put ftp-test ftp-get http-stress proxy-server
 
-build_driver: $(PROGS) $(EXTRA_PROGS) $(CMDFILES)
+# Submodule build targets
+.PHONY: submodules liboctonion symengine
+
+submodules: liboctonion symengine
+
+liboctonion:
+	@echo "Building LibOctonion submodule..."
+	cd LibOctonion && $(MAKE) CC=$(CC) CFLAGS="$(CDEBUG) -fPIC -O2"
+	@echo "LibOctonion build complete."
+
+symengine:
+	@echo "Building symengine submodule..."
+	@if [ ! -d "symengine/build" ]; then \
+		mkdir -p symengine/build; \
+	fi
+	cd symengine/build && cmake -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr/local \
+		-DWITH_LLVM=OFF \
+		-DWITH_MPFR=OFF \
+		-DBUILD_TESTS=OFF \
+		-DBUILD_BENCHMARKS=OFF \
+		.. && $(MAKE)
+	@echo "symengine build complete."
+
+build_driver: submodules $(PROGS) $(EXTRA_PROGS) $(CMDFILES)
 	@echo "Build done."
 
-LDLP=LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH
+LDLP=LD_LIBRARY_PATH=.:LibOctonion:symengine/build/symengine:$$LD_LIBRARY_PATH
 SLD=-DSIOD_LIB_DEFAULT=\\\"$(LIBSIODDIR)\\\"
 
 
@@ -107,17 +131,23 @@ SLD=-DSIOD_LIB_DEFAULT=\\\"$(LIBSIODDIR)\\\"
 #
 # uname = Linux
 
+# Build the program list conditionally based on available libraries
+LINUX_PROGS = siod tar.so parser_pratt.so ss.so gd.so raylib.so regex.so acct.so sql_sqlite3.so pthreads.so symengine.so
+LINUX_EXTRA_PROGS = siod-raylib
+ifeq ($(PLPLOT_AVAILABLE),yes)
+    LINUX_PROGS += plplot.so
+endif
+
 linux:
 	$(MAKE) $(LDLP) \
-	PROGS="siod tar.so parser_pratt.so ss.so gd.so raylib.so \
-	       regex.so acct.so sql_sqlite3.so pthreads.so \
-	       plplot.so symengine.so" \
+	PROGS="$(LINUX_PROGS)" \
+	EXTRA_PROGS="$(LINUX_EXTRA_PROGS)" \
 	CC="gcc" \
 	LD="gcc" \
-	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 -D__USE_MISC -D__USE_GNU -D__USE_SVID -D__USE_XOPEN_EXTENDED -D__USE_XOPEN $(SLD) $(READLINE_CFLAGS)" \
-	LD_EXE_FLAGS="-rdynamic -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
+	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 -D__USE_MISC -D__USE_GNU -D__USE_SVID -D__USE_XOPEN_EXTENDED -D__USE_XOPEN $(SLD) $(READLINE_CFLAGS) -ILibOctonion -Isymengine -Isymengine/build" \
+	LD_EXE_FLAGS="-rdynamic -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR) -LLibOctonion -Lsymengine/build/symengine" \
 	LD_EXE_LIBS="-ldl" \
-	LD_LIB_FLAGS="-shared -L/usr/local/lib" \
+	LD_LIB_FLAGS="-shared -L/usr/local/lib -LLibOctonion -Lsymengine/build/symengine" \
 	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread  -lCQRlib -loct  $(JSON_LDFLAGS) $(READLINE_LDFLAGS)" \
 	SO="so" \
         build_driver
@@ -131,10 +161,10 @@ darwin:
 	       regex.dylib  sql_sqlite3.dylib pthreads.dylib" \
 	CC="clang" \
 	LD="clang" \
-	CFLAGS="$(GCCW) $(CDEBUG) -Ddarwin -fPIC -O2 $(SLD)" \
-	LD_EXE_FLAGS=" -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR)" \
+	CFLAGS="$(GCCW) $(CDEBUG) -Ddarwin -fPIC -O2 $(SLD) -ILibOctonion -Isymengine -Isymengine/build" \
+	LD_EXE_FLAGS=" -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR) -LLibOctonion -Lsymengine/build/symengine" \
 	LD_EXE_LIBS="" \
-	LD_LIB_FLAGS="-dynamiclib -L/usr/local/lib" \
+	LD_LIB_FLAGS="-dynamiclib -L/usr/local/lib -LLibOctonion -Lsymengine/build/symengine" \
 	LD_LIB_LIBS="-lm -lsqlite3 -lpthread -lCQRlib -loct" \
 	SO="dylib" \
         build_driver
@@ -163,6 +193,15 @@ ssiod: siod.o $(SIOD_OBJS_COMMON)
 
 siod: siod.o libsiod.$(SO) 
 	$(CC) -o siod $(LD_EXE_FLAGS) siod.o libsiod.$(SO) $(LD_EXE_LIBS) -lCQRlib -loct
+
+# siod-raylib: version with raylib statically linked for graphics examples
+siod-raylib: siod.o libsiod.$(SO) raylib.$(SO)
+	$(CC) -o siod-raylib $(LD_EXE_FLAGS) \
+		-Wl,-rpath,'$$ORIGIN' -Wl,-rpath,. \
+		-Wl,-rpath,'$$ORIGIN/LibOctonion' -Wl,-rpath,LibOctonion \
+		-Wl,-rpath,'$$ORIGIN/symengine/build/symengine' -Wl,-rpath,symengine/build/symengine \
+		siod.o libsiod.$(SO) raylib.$(SO) \
+		$(LD_EXE_LIBS) -lCQRlib -loct -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 sample: $(SAMPLE_OBJS)
 	$(CC) -o sample $(LD_EXE_FLAGS) $(SAMPLE_OBJS) $(LD_EXE_LIBS)
@@ -218,11 +257,11 @@ plplot.$(SO): siod_plplot.o  libsiod.$(SO)
 	$(LD) -o plplot.$(SO) $(LD_LIB_FLAGS) siod_plplot.o libsiod.$(SO) \
 	      -lplplot $(LD_LIB_LIBS)
 
-SYMENGINE_CFLAGS := -I/usr/local/include
-SYMENGINE_LIBS := -lsymengine -lstdc++ -lgmp
+SYMENGINE_CFLAGS := -Isymengine -Isymengine/build
+SYMENGINE_LIBS := -Lsymengine/build/symengine -lsymengine -lstdc++ -lgmp
 
 symengine.o: symengine.c siod.h
-	$(CC) $(CFLAGS) -c symengine.c
+	$(CC) $(CFLAGS) $(SYMENGINE_CFLAGS) -c symengine.c
 
 symengine.$(SO):  symengine.o  libsiod.$(SO)
 	$(LD) -o symengine.$(SO) $(LD_LIB_FLAGS) symengine.o libsiod.$(SO) \
@@ -345,6 +384,16 @@ clean:
 	-rm -f *.o *.so *.sl  *.dylib *~ $(MANPAGES:.man=.txt) so_locations \
             siod sample siod.tar siod.tar.gz siod.zip selfdoc.txt TAGS \
 	    *.db *.gif  $(CMDFILES)
+
+clean-submodules:
+	@echo "Cleaning LibOctonion..."
+	-cd LibOctonion && $(MAKE) clean
+	@echo "Cleaning symengine..."
+	-rm -rf symengine/build
+	@echo "Submodules cleaned."
+
+clean-all: clean clean-submodules
+	@echo "Complete clean done."
 
 # make manpage txt files for distribution to people who do not have 
 # nroff.

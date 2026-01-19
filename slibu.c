@@ -9,6 +9,8 @@
    convergence going on.
  */
 
+#define _XOPEN_SOURCE 700
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -19,6 +21,8 @@
 #include <time.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <limits.h>
+#include <crypt.h>
 
 #if defined(unix) || defined(__APPLE__) || defined(__MACH__)
 #include <unistd.h>
