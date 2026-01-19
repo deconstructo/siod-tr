@@ -93,9 +93,14 @@ CMDFILES = csiod snapshot-dir snapshot-compare http-get cp-build \
            ftp-cp ftp-put ftp-test ftp-get http-stress proxy-server
 
 # Submodule build targets
-.PHONY: submodules liboctonion symengine
+.PHONY: submodules cqrlib liboctonion symengine raylib-submodule
 
-submodules: liboctonion symengine
+submodules: cqrlib liboctonion symengine raylib-submodule
+
+cqrlib:
+	@echo "Building CQRlib submodule..."
+	cd CQRlib && $(MAKE) clean && $(MAKE) all
+	@echo "CQRlib build complete."
 
 liboctonion:
 	@echo "Building LibOctonion submodule..."
@@ -116,10 +121,21 @@ symengine:
 		.. && $(MAKE)
 	@echo "symengine build complete."
 
+raylib-submodule:
+	@echo "Building raylib submodule..."
+	@if [ ! -d "raylib/build" ]; then \
+		mkdir -p raylib/build; \
+	fi
+	cd raylib/build && cmake -DCMAKE_BUILD_TYPE=Release \
+		-DBUILD_EXAMPLES=OFF \
+		-DBUILD_GAMES=OFF \
+		.. && $(MAKE)
+	@echo "raylib build complete."
+
 build_driver: submodules $(PROGS) $(EXTRA_PROGS) $(CMDFILES)
 	@echo "Build done."
 
-LDLP=LD_LIBRARY_PATH=.:LibOctonion:symengine/build/symengine:$$LD_LIBRARY_PATH
+LDLP=LD_LIBRARY_PATH=.:CQRlib/lib/.libs:LibOctonion:symengine/build/symengine:raylib/build/raylib:$$LD_LIBRARY_PATH
 SLD=-DSIOD_LIB_DEFAULT=\\\"$(LIBSIODDIR)\\\"
 
 
@@ -144,10 +160,10 @@ linux:
 	EXTRA_PROGS="$(LINUX_EXTRA_PROGS)" \
 	CC="gcc" \
 	LD="gcc" \
-	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 -D__USE_MISC -D__USE_GNU -D__USE_SVID -D__USE_XOPEN_EXTENDED -D__USE_XOPEN $(SLD) $(READLINE_CFLAGS) -ILibOctonion -Isymengine -Isymengine/build" \
-	LD_EXE_FLAGS="-rdynamic -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR) -LLibOctonion -Lsymengine/build/symengine" \
+	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 -D__USE_MISC -D__USE_GNU -D__USE_SVID -D__USE_XOPEN_EXTENDED -D__USE_XOPEN $(SLD) $(READLINE_CFLAGS) -ICQRlib -ILibOctonion -Isymengine -Isymengine/build -Iraylib/src" \
+	LD_EXE_FLAGS="-rdynamic -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR) -LCQRlib/lib/.libs -LLibOctonion -Lsymengine/build/symengine -Lraylib/build/raylib" \
 	LD_EXE_LIBS="-ldl" \
-	LD_LIB_FLAGS="-shared -L/usr/local/lib -LLibOctonion -Lsymengine/build/symengine" \
+	LD_LIB_FLAGS="-shared -L/usr/local/lib -LCQRlib/lib/.libs -LLibOctonion -Lsymengine/build/symengine -Lraylib/build/raylib" \
 	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread  -lCQRlib -loct  $(JSON_LDFLAGS) $(READLINE_LDFLAGS)" \
 	SO="so" \
         build_driver
@@ -198,8 +214,10 @@ siod: siod.o libsiod.$(SO)
 siod-raylib: siod.o libsiod.$(SO) raylib.$(SO)
 	$(CC) -o siod-raylib $(LD_EXE_FLAGS) \
 		-Wl,-rpath,'$$ORIGIN' -Wl,-rpath,. \
+		-Wl,-rpath,'$$ORIGIN/CQRlib/lib/.libs' -Wl,-rpath,CQRlib/lib/.libs \
 		-Wl,-rpath,'$$ORIGIN/LibOctonion' -Wl,-rpath,LibOctonion \
 		-Wl,-rpath,'$$ORIGIN/symengine/build/symengine' -Wl,-rpath,symengine/build/symengine \
+		-Wl,-rpath,'$$ORIGIN/raylib/build/raylib' -Wl,-rpath,raylib/build/raylib \
 		siod.o libsiod.$(SO) raylib.$(SO) \
 		$(LD_EXE_LIBS) -lCQRlib -loct -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
