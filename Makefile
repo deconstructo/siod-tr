@@ -133,6 +133,7 @@ raylib-submodule:
 		mkdir -p raylib/build; \
 	fi
 	cd raylib/build && cmake -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON \
 		-DBUILD_EXAMPLES=OFF \
 		-DBUILD_GAMES=OFF \
 		.. && $(MAKE)
