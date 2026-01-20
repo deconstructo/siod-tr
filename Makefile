@@ -40,9 +40,15 @@ SIOD_OBJS_COMMON = slib.o sliba.o trace.o slibu.o md5.o \
 HS_REGEX_OBJS=regcomp.o regerror.o regexec.o regfree.o
 
 # Raylib graphics support (optional)
-RAYLIB_AVAILABLE := $(shell test -f /usr/local/lib/libraylib.so && echo yes || echo no)
-ifeq ($(RAYLIB_AVAILABLE),yes)
-    RAYLIB_CFLAGS = -I/usr/locla/include -DHAVE_RAYLIB
+# Check both local build and system installation
+RAYLIB_LOCAL := $(shell test -f raylib/build/raylib/libraylib.so && echo yes || echo no)
+RAYLIB_SYSTEM := $(shell test -f /usr/local/lib/libraylib.so && echo yes || echo no)
+
+ifeq ($(RAYLIB_LOCAL),yes)
+    RAYLIB_CFLAGS = -Iraylib/src -DHAVE_RAYLIB
+    RAYLIB_LDFLAGS = -Lraylib/build/raylib -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+else ifeq ($(RAYLIB_SYSTEM),yes)
+    RAYLIB_CFLAGS = -I/usr/local/include -DHAVE_RAYLIB
     RAYLIB_LDFLAGS = -L/usr/local/lib -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 endif
 
@@ -161,9 +167,11 @@ linux:
 	CC="gcc" \
 	LD="gcc" \
 	CFLAGS="$(GCCW) $(CDEBUG) -fPIC -O2 -D__USE_MISC -D__USE_GNU -D__USE_SVID -D__USE_XOPEN_EXTENDED -D__USE_XOPEN $(SLD) $(READLINE_CFLAGS) -ICQRlib -ILibOctonion -Isymengine -Isymengine/build -Iraylib/src" \
+	RAYLIB_CFLAGS="-Iraylib/src -DHAVE_RAYLIB" \
+	RAYLIB_LDFLAGS="-Wl,-rpath=\$$ORIGIN/raylib/build/raylib -Lraylib/build/raylib -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" \
 	LD_EXE_FLAGS="-rdynamic -Xlinker -rpath -Xlinker $(LIBDIR) -Xlinker -rpath -Xlinker $(LIBSIODDIR) -LCQRlib/lib/.libs -LLibOctonion -Lsymengine/build/symengine -Lraylib/build/raylib" \
 	LD_EXE_LIBS="-ldl" \
-	LD_LIB_FLAGS="-shared -L/usr/local/lib -LCQRlib/lib/.libs -LLibOctonion -Lsymengine/build/symengine -Lraylib/build/raylib" \
+	LD_LIB_FLAGS="-shared -LCQRlib/lib/.libs -LLibOctonion -Lsymengine/build/symengine -Lraylib/build/raylib" \
 	LD_LIB_LIBS="-lm -lc -ldl -lcrypt -lsqlite3 -lpthread  -lCQRlib -loct  $(JSON_LDFLAGS) $(READLINE_LDFLAGS)" \
 	SO="so" \
         build_driver

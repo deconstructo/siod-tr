@@ -90,17 +90,71 @@ The goal is a proper mathematical computing environment where you can:
 
 ## Building
 
+
+git submodule update --init --recursive
+
+
 ```bash
 # Install dependencies (Ubuntu/Debian)
-sudo apt install libgd-dev libsqlite3-dev li
+sudo apt-get install -y \
+    build-essential \
+    libtool-bin \
+    automake \
+    pkg-config \
+    libgd-dev \
+    libsqlite3-dev \
+    libcjson-dev \
+    libreadline-dev \
+    libgmp-dev \
+    cmake \
+    libplplot-dev \
+    git
 
-# Build
+# Install dependencies (Fedora/RHEL)
+sudo dnf install -y \
+    @development-tools \
+    libtool \
+    automake \
+    pkgconfig \
+    gd-devel \
+    sqlite-devel \
+    cjson-devel \
+    readline-devel \
+    gmp-devel \
+    cmake \
+    plplot-devel \
+    git
+
+
+
+# Build submodules first
+cd CQRlib && make all && cd ..
+cd LibOctonion && make && cd ..
+cd symengine && mkdir -p build && cd build && cmake .. && make && cd ../..
+
+# Build raylib as shared library (IMPORTANT: use BUILD_SHARED_LIBS=ON)
+cd raylib && mkdir -p build && cd build && \
+  cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_EXAMPLES=OFF .. && \
+  make && \
+  ln -sf libraylib.so.*.*.* libraylib.so && \
+  cd ../..
+
+# Build SIOD
 make linux
 
+# Set up library path (required for running)
+export LD_LIBRARY_PATH=.:CQRlib/lib/.libs:LibOctonion:symengine/build/symengine:raylib/build/raylib:$LD_LIBRARY_PATH
+
+# Run the interpreter
+./siod
+
+# Or run with raylib support
+./siod-raylib examples/raylib-examples.scm
+
 # Run tests
-LD_LIBRARY_PATH=. ./siod -v01,-m2 tests/test-gd.scm
-LD_LIBRARY_PATH=. ./siod -v01,-m2 tests/test-sqlite3.scm
-LD_LIBRARY_PATH=. ./siod -v01,-m2 tests/test-sql-utilities.scm
+./siod -v01,-m2 tests/test-gd.scm
+./siod -v01,-m2 tests/test-sqlite3.scm
+./siod -v01,-m2 tests/test-sql-utilities.scm
 ```
 
 ## Documentation
