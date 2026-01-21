@@ -315,6 +315,7 @@ void set_eval_hooks(long type,LISP (*fcn)(LISP, LISP *, LISP *));
 LISP leval(LISP x,LISP env);
 LISP symbolconc(LISP args);
 void set_print_hooks(long type,void (*fcn)(LISP, struct gen_printio *));
+LISP lprin1(LISP exp,LISP lf);
 LISP lprin1g(LISP exp,struct gen_printio *f);
 LISP lprin1f(LISP exp,FILE *f);
 LISP lprint(LISP exp,LISP);

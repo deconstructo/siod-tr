@@ -1,0 +1,12 @@
+[submodule "LibOctonion"]
+	path = LibOctonion
+	url = https://github.com/deconstructo/LibOctonion
+[submodule "symengine"]
+	path = symengine
+	url = https://github.com/symengine/symengine.git
+[submodule "raylib"]
+	path = raylib
+	url = https://github.com/raysan5/raylib.git
+[submodule "CQRlib"]
+	path = CQRlib
+	url = https://github.com/yayahjb/cqrlib.git

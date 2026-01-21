@@ -272,11 +272,63 @@
       
       (close-window))))
 
+;;; ============================================
+;;; INTERACTIVE MENU SYSTEM
+;;; ============================================
+
+(define (show-menu)
+  (writes nil "
+==============================================
+    SIOD-TR Raylib Examples Menu
+==============================================
+
+1. raylib-test           - Simple animated test (START HERE!)
+2. hello-world-1         - Bouncing ball
+3. hello-world-interactive - Keyboard-controlled circle
+4. hello-world-mouse     - Mouse tracking
+5. mandelbrot-static     - The Mandelbrot set! (progressive render)
+6. mandelbrot-interactive - Pan with arrow keys
+0. Exit
+
+Enter your choice (0-6): "))
+
+(define (run-example choice)
+  (cond
+    ((equal? choice "1") (raylib-test))
+    ((equal? choice "2") (hello-world-1))
+    ((equal? choice "3") (hello-world-interactive))
+    ((equal? choice "4") (hello-world-mouse))
+    ((equal? choice "5") (mandelbrot-static))
+    ((equal? choice "6") (mandelbrot-interactive))
+    ((equal? choice "0") (writes nil "\nGoodbye!\n"))
+    (t (writes nil "\nInvalid choice! Please try again.\n"))))
+
+(define (main-menu)
+  (let ((continue #t))
+    (while continue
+      (show-menu)
+      (let ((choice (readline)))
+        (if (equal? choice "0")
+            (begin
+              (writes nil "\nGoodbye!\n")
+              (set! continue #f))
+            (begin
+              (run-example choice)
+              (writes nil "\nPress Enter to return to menu...")
+              (readline)))))))
+
 ;;; To run examples:
-;;; (load "raylib-examples.scm")
-;;; (raylib-test)              ; Simple animated test - START HERE!
-;;; (hello-world-1)            ; Bouncing ball
-;;; (hello-world-interactive)  ; Keyboard-controlled circle
-;;; (hello-world-mouse)        ; Mouse tracking
-;;; (mandelbrot-static)        ; The Mandelbrot set! (progressive render)
-;;; (mandelbrot-interactive)   ; Pan with arrow keys (slow but workable)
+;;; Option 1: Interactive menu (recommended):
+;;;   ./siod-raylib examples/raylib-examples.scm
+;;;   Then: (main-menu)
+;;;
+;;; Option 2: Run specific examples directly:
+;;;   (raylib-test)              ; Simple animated test - START HERE!
+;;;   (hello-world-1)            ; Bouncing ball
+;;;   (hello-world-interactive)  ; Keyboard-controlled circle
+;;;   (hello-world-mouse)        ; Mouse tracking
+;;;   (mandelbrot-static)        ; The Mandelbrot set! (progressive render)
+;;;   (mandelbrot-interactive)   ; Pan with arrow keys (slow but workable)
+
+;;; Auto-start menu when loaded
+(main-menu)

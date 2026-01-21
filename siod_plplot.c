@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Forward declaration */
+void init_subr_plplot(void);
 
 void init_plplot(void) {
 	init_subr_plplot();
