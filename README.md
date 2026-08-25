@@ -2,6 +2,18 @@
 
 **Modernized SIOD for mathematical mayhem and computational chaos.**
 
+**Future**
+
+This was my first attempt to build a LISP/Scheme that catered to my desire to explore ideas and to develop a LISP/Scheme that catered to things that I wanted to explore. It was useful In that respect. But it doesn't really scale with what I am interested in.
+
+So, my focus has shifted to a new LISP/Scheme project: https://github.com/deconstructo/curry
+
+This allows me to explore new ideas,  but with a code-base that I am not fighting with.
+
+Pease check it out!
+
+
+
 ## What is this?
 
 This is SIOD 3.6.2 by George Carrette, dragged kicking and screaming into 2025.
